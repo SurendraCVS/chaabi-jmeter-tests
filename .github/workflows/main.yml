@@ -42,16 +42,20 @@ jobs:
           mkdir -p ./jmeter-tests/reports
           mkdir -p ./jmeter-tests/results
 
-      # ✅ Debug step to list files
+      # ✅ Debug: List files and print the JMeter command
       - name: List Files
-        run: |
-          ls -R
+        run: ls -R
 
-      # ✅ Run JMeter Test with corrected path
+      - name: Debug JMeter Command
+        run: |
+          echo "Running JMeter Command:"
+          echo "jmeter -n -t ./C_1.jmx -l ./jmeter-tests/results/results.jtl -e -o ./jmeter-tests/reports -Jthreads=100 -Jrampup=10 -Jduration=60 -f"
+
+      # ✅ Run JMeter Tests (fixed formatting)
       - name: Run JMeter Tests
         run: |
           jmeter -n \
-            -t ./C_1.jmx \                     # ✅ Correct path
+            -t ./C_1.jmx \
             -l ./jmeter-tests/results/results.jtl \
             -e -o ./jmeter-tests/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
