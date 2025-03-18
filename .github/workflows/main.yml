@@ -13,11 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
+      # ✅ Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install JMeter
+      # ✅ Install JMeter
       - name: Install JMeter
         run: |
           sudo apt update
@@ -25,20 +25,24 @@ jobs:
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.2.tgz
           tar -xvzf apache-jmeter-5.6.2.tgz
           echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.2" >> $GITHUB_ENV
-          echo "$JMETER_HOME/bin" >> $GITHUB_PATH
+          echo "$(pwd)/apache-jmeter-5.6.2/bin" >> $GITHUB_PATH
+          
+      # ✅ Reload environment variables to apply the PATH changes
+      - name: Load environment variables
+        run: source $GITHUB_ENV
 
-      # Verify JMeter Installation
+      # ✅ Verify JMeter Installation
       - name: Verify JMeter Installation
         run: |
           jmeter --version
 
-      # Create reports and results folders
+      # ✅ Create report directories
       - name: Create report directories
         run: |
           mkdir -p ./jmeter-tests/reports
           mkdir -p ./jmeter-tests/results
 
-      # Run JMeter Test
+      # ✅ Run JMeter Test
       - name: Run JMeter Tests
         run: |
           jmeter -n -t ./jmeter-tests/E_1_FF.jmx \
@@ -46,13 +50,13 @@ jobs:
                  -e -o ./jmeter-tests/reports \
                  -Jthreads=100 -Jrampup=10 -Jduration=60 -f
 
-      # Display Test Summary
+      # ✅ Display Test Summary
       - name: Display Test Summary
         run: |
           echo "Test Summary:"
           grep "summary =" ./jmeter-tests/results/results.jtl || echo "No summary found"
 
-      # Upload Reports and Logs
+      # ✅ Upload Reports and Logs
       - name: Upload Reports and Logs
         uses: actions/upload-artifact@v4
         with:
