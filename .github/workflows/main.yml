@@ -45,7 +45,7 @@ jobs:
       # ✅ Run JMeter Test
       - name: Run JMeter Tests
         run: |
-          jmeter -n -t ./jmeter-tests/E_1_FF.jmx \
+          jmeter -n -t ./jmeter-tests/C_1.jmx \
                  -l ./jmeter-tests/results/results.jtl \
                  -e -o ./jmeter-tests/reports \
                  -Jthreads=100 -Jrampup=10 -Jduration=60 -f
