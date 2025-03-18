@@ -27,7 +27,7 @@ jobs:
           echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.2" >> $GITHUB_ENV
           echo "$(pwd)/apache-jmeter-5.6.2/bin" >> $GITHUB_PATH
 
-      # ✅ Reload environment variables to apply the PATH changes
+      # ✅ Reload environment variables
       - name: Load environment variables
         run: source $GITHUB_ENV
 
@@ -42,11 +42,16 @@ jobs:
           mkdir -p ./jmeter-tests/reports
           mkdir -p ./jmeter-tests/results
 
-      # ✅ Run JMeter Test (Correct indentation and multiline format)
+      # ✅ Debug step to list files
+      - name: List Files
+        run: |
+          ls -R
+
+      # ✅ Run JMeter Test with corrected path
       - name: Run JMeter Tests
         run: |
           jmeter -n \
-            -t ./jmeter-tests/C_1.jmx \
+            -t ./C_1.jmx \                     # ✅ Correct path
             -l ./jmeter-tests/results/results.jtl \
             -e -o ./jmeter-tests/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
