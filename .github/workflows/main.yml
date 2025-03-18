@@ -42,13 +42,14 @@ jobs:
           mkdir -p ./jmeter-tests/reports
           mkdir -p ./jmeter-tests/results
 
-      # ✅ Run JMeter Test
+      # ✅ Run JMeter Test (Correct indentation and multiline format)
       - name: Run JMeter Tests
         run: |
-          jmeter -n -t ./jmeter-tests/C_1.jmx \   # Correct path
-                 -l ./jmeter-tests/results/results.jtl \
-                 -e -o ./jmeter-tests/reports \
-                 -Jthreads=100 -Jrampup=10 -Jduration=60 -f
+          jmeter -n \
+            -t ./jmeter-tests/C_1.jmx \
+            -l ./jmeter-tests/results/results.jtl \
+            -e -o ./jmeter-tests/reports \
+            -Jthreads=100 -Jrampup=10 -Jduration=60 -f
 
       # ✅ Display Test Summary
       - name: Display Test Summary
