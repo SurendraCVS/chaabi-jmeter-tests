@@ -39,25 +39,16 @@ jobs:
       # ✅ Create report directories
       - name: Create report directories
         run: |
-          mkdir -p ./jmeter-tests/reports
+          mkdir -p ./jmeter-pages/reports
           mkdir -p ./jmeter-tests/results
 
-      # ✅ Debug: List files and print the JMeter command
-      - name: List Files
-        run: ls -R
-
-      - name: Debug JMeter Command
-        run: |
-          echo "Running JMeter Command:"
-          echo "jmeter -n -t ./C_1.jmx -l ./jmeter-tests/results/results.jtl -e -o ./jmeter-tests/reports -Jthreads=100 -Jrampup=10 -Jduration=60 -f"
-
-      # ✅ Run JMeter Tests (fixed formatting)
+      # ✅ Run JMeter Tests
       - name: Run JMeter Tests
         run: |
           jmeter -n \
             -t ./C_1.jmx \
             -l ./jmeter-tests/results/results.jtl \
-            -e -o ./jmeter-tests/reports \
+            -e -o ./jmeter-pages/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
 
       # ✅ Display Test Summary
@@ -66,36 +57,37 @@ jobs:
           echo "Test Summary:"
           grep "summary =" ./jmeter-tests/results/results.jtl || echo "No summary found"
 
-      # ✅ Upload Reports and Logs
-      - name: Upload Reports and Logs
+      # ✅ Upload Reports as Artifacts
+      - name: Upload Reports
         uses: actions/upload-artifact@v4
         with:
           name: JMeter-Reports
-          path: |
-            ./jmeter-tests/reports/
-            ./jmeter-tests/results/results.jtl
+          path: ./jmeter-pages/reports
 
-  # ✅ Deploy HTML Report to GitHub Pages
+  # ✅ Deploy to GitHub Pages
   deploy:
     needs: jmeter-tests
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout the repository
+      # ✅ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Download JMeter Report Artifact
-      - name: Download JMeter Report Artifact
+      # ✅ Download JMeter reports artifact
+      - name: Download reports artifact
         uses: actions/download-artifact@v4
         with:
           name: JMeter-Reports
-          path: ./jmeter-pages
+          path: ./jmeter-pages/reports
 
       # ✅ Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages                     # Deploy to GitHub Pages branch
-          folder: ./jmeter-pages/reports       # The folder containing the HTML report
-          target-folder: .                     # Deploy at the root of the GitHub Pages
+          branch: gh-pages           # Target branch for GitHub Pages
+          folder: ./jmeter-pages/reports   # Folder containing the HTML reports
+          token: ${{ secrets.GITHUB_TOKEN }}
+          clean: true
+          force: true
+          attempt-limit: 3
