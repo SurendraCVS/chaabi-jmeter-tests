@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "date": "2025-03-19_12-19-08",
+      "avgResponseTime": 0,
+      "errorCount": 0,
+      "throughput": 0,
+      "isCurrent": true
+    }
+,
+    {
+      "date": "2025-03-19_12-19-08",
+      "avgResponseTime": 0,
+      "errorCount": 0,
+      "throughput": 0,
+      "isCurrent": false
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JMeter Historical Comparison</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .chart-container { height: 400px; margin-bottom: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f2f2f2; }
+    tr.current { background-color: #e6f7ff; font-weight: bold; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    .header a { text-decoration: none; padding: 10px; background: #f2f2f2; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>JMeter Historical Test Comparison</h1>
+      <a href="../index.html">Back to Current Report</a>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="responseTimeChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="throughputChart"></canvas>
+    </div>
+    
+    <div class="chart-container">
+      <canvas id="errorChart"></canvas>
+    </div>
+    
+    <h2>Test Results History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Avg Response Time (ms)</th>
+          <th>Throughput (req/s)</th>
+          <th>Error Count</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable">
+        <!-- Data will be loaded from history.json -->
+      </tbody>
+    </table>
+  </div>
+  
+  <script>
+    async function loadData() {
+      const response = await fetch('history.json');
+      const data = await response.json();
+      
+      // Sort tests by date (newest first)
+      data.tests.sort((a, b) => {
+        if (a.isCurrent) return -1;
+        if (b.isCurrent) return 1;
+        return new Date(b.date) - new Date(a.date);
+      });
+      
+      // Prepare chart data
+      const dates = data.tests.map(test => formatDate(test.date));
+      const responseTimes = data.tests.map(test => test.avgResponseTime);
+      const throughputs = data.tests.map(test => test.throughput);
+      const errors = data.tests.map(test => test.errorCount);
+      
+      // Create charts
+      createChart('responseTimeChart', 'Average Response Time (ms)', dates, responseTimes);
+      createChart('throughputChart', 'Throughput (req/s)', dates, throughputs);
+      createChart('errorChart', 'Error Count', dates, errors);
+      
+      // Populate table
+      const tableBody = document.getElementById('historyTable');
+      data.tests.forEach(test => {
+        const row = document.createElement('tr');
+        if (test.isCurrent) {
+          row.className = 'current';
+        }
+        
+        row.innerHTML = `
+          <td>${formatDate(test.date)}</td>
+          <td>${test.avgResponseTime}</td>
+          <td>${test.throughput}</td>
+          <td>${test.errorCount}</td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+    }
+    
+    function formatDate(dateStr) {
+      // Convert YYYY-MM-DD_HH-MM-SS to a more readable format
+      return dateStr.replace(/_/g, ' ').replace(/-/g, ':');
+    }
+    
+    function createChart(id, label, labels, data) {
+      const ctx = document.getElementById(id).getContext('2d');
+      
+      // Determine if this is the error chart
+      const isErrorChart = id === 'errorChart';
+      
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            backgroundColor: isErrorChart ? 'rgba(255, 99, 132, 0.2)' : 'rgba(54, 162, 235, 0.2)',
+            borderColor: isErrorChart ? 'rgba(255, 99, 132, 1)' : 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+    
+    // Load data when page loads
+    window.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
