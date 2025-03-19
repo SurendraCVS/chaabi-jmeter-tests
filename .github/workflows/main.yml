@@ -51,6 +51,11 @@ jobs:
             -e -o ./jmeter-pages/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
 
+      # ✅ Inject Base URL in JMeter Report
+      - name: Inject Base URL
+        run: |
+          sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/jmeter-pages/reports/">#g' ./jmeter-pages/reports/index.html
+
       # ✅ Display Test Summary
       - name: Display Test Summary
         run: |
@@ -81,12 +86,18 @@ jobs:
           name: JMeter-Reports
           path: ./jmeter-pages/reports
 
+      # ✅ Prepare GitHub Pages Deployment
+      - name: Prepare GitHub Pages Deployment
+        run: |
+          mkdir -p ./public
+          mv ./jmeter-pages/reports/* ./public/
+
       # ✅ Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: gh-pages           # Target branch for GitHub Pages
-          folder: ./jmeter-pages/reports   # Folder containing the HTML reports
+          branch: gh-pages                # Target branch for GitHub Pages
+          folder: ./public                # Folder containing the HTML reports
           token: ${{ secrets.GITHUB_TOKEN }}
           clean: true
           force: true
