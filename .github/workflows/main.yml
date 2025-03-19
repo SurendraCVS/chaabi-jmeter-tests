@@ -52,6 +52,7 @@ jobs:
         with:
           name: JMeter-History
           path: ./jmeter-pages/history
+          retention-days: 30  # Keep artifacts for 30 days
 
       # ✅ Run JMeter Tests
       - name: Run JMeter Tests
@@ -72,6 +73,9 @@ jobs:
       # ✅ Generate historical comparison
       - name: Generate Historical Comparison
         run: |
+          # Ensure history directory exists and has proper permissions
+          mkdir -p ./jmeter-pages/history
+          chmod -R 755 ./jmeter-pages/history
           ./scripts/run_comparison.sh ./jmeter-tests/results/results.jtl
 
       # ✅ Display Test Summary
@@ -86,6 +90,7 @@ jobs:
         with:
           name: JMeter-Reports
           path: ./jmeter-pages/reports
+          retention-days: 30  # Keep artifacts for 30 days
 
       # ✅ Upload Historical Data as Artifacts
       - name: Upload Historical Data
@@ -93,6 +98,7 @@ jobs:
         with:
           name: JMeter-History
           path: ./jmeter-pages/history
+          retention-days: 30  # Keep artifacts for 30 days
 
   # ✅ GitHub Pages Deployment
   deploy:
@@ -111,6 +117,13 @@ jobs:
           name: JMeter-Reports
           path: ./jmeter-pages/reports
 
+      # ✅ Download Historical Data Artifact
+      - name: Download Historical Data
+        uses: actions/download-artifact@v4
+        with:
+          name: JMeter-History
+          path: ./jmeter-pages/history
+
       # ✅ Prepare for GitHub Pages
       - name: Prepare GitHub Pages Structure
         run: |
@@ -120,6 +133,13 @@ jobs:
           # Copy reports to public/reports
           mkdir -p ./public/reports
           cp -r ./jmeter-pages/reports/* ./public/reports/
+          
+          # Copy historical data to public/history
+          mkdir -p ./public/history
+          cp -r ./jmeter-pages/history/* ./public/history/
+          
+          # Ensure proper permissions
+          chmod -R 755 ./public
           
           # Create 404.html in reports directory
           cp ./public/reports/index.html ./public/reports/404.html
@@ -146,6 +166,5 @@ jobs:
           branch: gh-pages                # Target branch for GitHub Pages
           folder: ./public                # Folder containing the HTML reports
           token: ${{ secrets.GITHUB_TOKEN }}
-          clean: true
           force: true
           attempt-limit: 3 
