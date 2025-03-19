@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "date": "2025-03-19_14-18-16",
+      "date": "2025-03-19_14-18-46",
       "samples": 0,
       "fail": 0,
       "errorPct": 0.00,
@@ -15,7 +15,8 @@
       "throughput": 0,
       "kbReceived": 0,
       "kbSent": 0,
-      "isCurrent": true
+      "isCurrent": true,
+      "id": "2025-03-19_14-18-46"
     }
   ]
 }
