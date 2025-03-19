@@ -1,0 +1,19 @@
+{
+  "name": "jmeter-history-api",
+  "version": "1.0.0",
+  "description": "API server for JMeter historical data management",
+  "main": "delete-test.js",
+  "scripts": {
+    "start": "node delete-test.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
