@@ -32,6 +32,16 @@
     .improvement { color: green; }
     .degradation { color: red; }
     .test-selector { margin-bottom: 15px; }
+    .action-btn { padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+    .delete-btn { background-color: #f44336; color: white; border: none; margin-left: 5px; }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+    .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 50%; border-radius: 5px; }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+    .close:hover { color: black; }
+    .modal-buttons { margin-top: 20px; text-align: right; }
+    .modal-buttons button { margin-left: 10px; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .btn-cancel { background-color: #f2f2f2; border: 1px solid #ddd; }
+    .btn-delete { background-color: #f44336; color: white; border: none; }
   </style>
 </head>
 <body>
@@ -158,12 +168,27 @@
             <th>Throughput (req/s)</th>
             <th>KB/sec</th>
             <th>Samples</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="historyTable">
           <!-- Data will be loaded from history.json -->
         </tbody>
       </table>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h4>Confirm Deletion</h4>
+        <p>Are you sure you want to delete this test run?</p>
+        <p id="deleteTestDate"></p>
+        <div class="modal-buttons">
+          <button class="btn-cancel" id="cancelDelete">Cancel</button>
+          <button class="btn-delete" id="confirmDelete">Delete</button>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -172,6 +197,7 @@
     let allTests = [];
     let filteredTests = [];
     let charts = {};
+    let testToDelete = null;
     
     // Initialize the comparison page
     async function initComparison() {
@@ -209,6 +235,31 @@
           checkbox.addEventListener('change', updateCharts);
         });
         document.getElementById('compareBtn').addEventListener('click', compareTests);
+        
+        // Set up modal functionality
+        const modal = document.getElementById('deleteModal');
+        const closeBtn = document.querySelector('.close');
+        const cancelBtn = document.getElementById('cancelDelete');
+        const confirmBtn = document.getElementById('confirmDelete');
+        
+        closeBtn.addEventListener('click', () => {
+          modal.style.display = 'none';
+        });
+        
+        cancelBtn.addEventListener('click', () => {
+          modal.style.display = 'none';
+        });
+        
+        confirmBtn.addEventListener('click', () => {
+          deleteTest(testToDelete);
+          modal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
         
       } catch (error) {
         console.error('Error initializing comparison page:', error);
@@ -504,6 +555,9 @@
           <td>${test.throughput}</td>
           <td>${test.kbPerSec}</td>
           <td>${test.samples}</td>
+          <td>
+            <button class="action-btn delete-btn" data-id="${test.id}" onclick="showDeleteConfirmation('${test.id}', '${formatDate(test.date)}')">Delete</button>
+          </td>
         `;
         
         tableBody.appendChild(row);
@@ -696,8 +750,101 @@
       return dateStr.replace(/_/g, ' ').replace(/-/g, ':');
     }
     
+    // Show delete confirmation modal
+    function showDeleteConfirmation(id, formattedDate) {
+      testToDelete = id;
+      document.getElementById('deleteTestDate').textContent = `Test from: ${formattedDate}`;
+      document.getElementById('deleteModal').style.display = 'block';
+    }
+    
+    // Delete a test
+    function deleteTest(id) {
+      // First try the API server
+      fetch(`http://localhost:3000/api/test/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          // If API server fails, try the PHP endpoint as fallback
+          return fetch(`delete-test.php?id=${id}`, {
+            method: 'POST'
+          })
+          .then(resp => {
+            if (resp.ok) {
+              return resp.json();
+            } else {
+              throw new Error('Failed to delete test with both methods');
+            }
+          });
+        }
+      })
+      .then(data => {
+        // Remove the test from our arrays
+        allTests = allTests.filter(test => test.id !== id);
+        filteredTests = filteredTests.filter(test => test.id !== id);
+        
+        // Update UI
+        updateCharts();
+        populateTable();
+        populateTestSelectors();
+        
+        // Show success message
+        alert('Test deleted successfully');
+        
+        // Also store the deletion in localStorage to remember it across sessions
+        const deletedTests = JSON.parse(localStorage.getItem('deletedTests') || '[]');
+        deletedTests.push(id);
+        localStorage.setItem('deletedTests', JSON.stringify(deletedTests));
+      })
+      .catch(error => {
+        console.error('Error deleting test:', error);
+        
+        // If both server methods fail, offer manual deletion from UI only
+        if (confirm('Server deletion failed. Remove this test from the UI only? (Note: The file will still exist on the server)')) {
+          // Remove from UI only
+          allTests = allTests.filter(test => test.id !== id);
+          filteredTests = filteredTests.filter(test => test.id !== id);
+          
+          // Update UI
+          updateCharts();
+          populateTable();
+          populateTestSelectors();
+          
+          // Store in localStorage
+          const deletedTests = JSON.parse(localStorage.getItem('deletedTests') || '[]');
+          deletedTests.push(id);
+          localStorage.setItem('deletedTests', JSON.stringify(deletedTests));
+        } else {
+          alert('Deletion canceled');
+        }
+      });
+    }
+    
+    // Filter out tests that were deleted in previous sessions
+    function filterDeletedTests() {
+      const deletedTests = JSON.parse(localStorage.getItem('deletedTests') || '[]');
+      if (deletedTests.length > 0) {
+        allTests = allTests.filter(test => !deletedTests.includes(test.id));
+        filteredTests = filteredTests.filter(test => !deletedTests.includes(test.id));
+      }
+    }
+    
     // Initialize the page when DOM content is loaded
-    window.addEventListener('DOMContentLoaded', initComparison);
+    window.addEventListener('DOMContentLoaded', () => {
+      initComparison()
+        .then(() => {
+          // Filter out deleted tests after loading
+          filterDeletedTests();
+          updateCharts();
+          populateTable();
+          populateTestSelectors();
+        });
+    });
   </script>
 </body>
 </html>
