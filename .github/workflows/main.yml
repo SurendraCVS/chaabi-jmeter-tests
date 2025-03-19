@@ -9,11 +9,12 @@ on:
       - main
 
 jobs:
+  # ✅ JMeter Tests
   jmeter-tests:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout code
+      # ✅ Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -31,9 +32,10 @@ jobs:
       - name: Load environment variables
         run: source $GITHUB_ENV
 
-      # ✅ Verify JMeter Installation
+      # ✅ Verify JMeter installation
       - name: Verify JMeter Installation
-        run: jmeter --version
+        run: |
+          jmeter --version
 
       # ✅ Create report directories
       - name: Create report directories
@@ -50,10 +52,10 @@ jobs:
             -e -o ./jmeter-pages/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
 
-      # ✅ Inject Base URL in JMeter Report
+      # ✅ Inject Correct Base URL for GitHub Pages
       - name: Inject Base URL
         run: |
-          sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/jmeter-pages/reports/">#g' ./jmeter-pages/reports/index.html
+          find ./jmeter-pages/reports -name "*.html" -exec sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/reports/">#g' {} +
 
       # ✅ Display Test Summary
       - name: Display Test Summary
@@ -62,13 +64,13 @@ jobs:
           grep "summary =" ./jmeter-tests/results/results.jtl || echo "No summary found"
 
       # ✅ Upload Reports as Artifacts
-      - name: Upload Reports
+      - name: Upload JMeter Reports
         uses: actions/upload-artifact@v4
         with:
           name: JMeter-Reports
           path: ./jmeter-pages/reports
 
-  # ✅ Deploy to GitHub Pages
+  # ✅ GitHub Pages Deployment
   deploy:
     needs: jmeter-tests
     runs-on: ubuntu-latest
@@ -78,8 +80,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Download JMeter reports artifact
-      - name: Download reports artifact
+      # ✅ Download JMeter Reports Artifact
+      - name: Download JMeter Reports
         uses: actions/download-artifact@v4
         with:
           name: JMeter-Reports
@@ -89,7 +91,8 @@ jobs:
       - name: Prepare GitHub Pages Deployment
         run: |
           mkdir -p ./public
-          mv ./jmeter-pages/reports/* ./public/
+          mv ./jmeter-pages/reports/* ./public/            # Move reports to /public
+          cp ./public/index.html ./public/404.html         # Prevent 404 errors
 
       # ✅ Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
