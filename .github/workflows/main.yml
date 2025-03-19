@@ -33,8 +33,7 @@ jobs:
 
       # ✅ Verify JMeter Installation
       - name: Verify JMeter Installation
-        run: |
-          jmeter --version
+        run: jmeter --version
 
       # ✅ Create report directories
       - name: Create report directories
