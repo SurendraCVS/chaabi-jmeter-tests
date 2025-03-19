@@ -87,6 +87,26 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
               <label for="maxRTCheckbox">Max Response Time</label>
             </div>
             <div class="checkbox-item">
+              <input type="checkbox" id="medianRTCheckbox" checked>
+              <label for="medianRTCheckbox">Median RT</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="pct90RTCheckbox">
+              <label for="pct90RTCheckbox">90th Percentile RT</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="pct95RTCheckbox">
+              <label for="pct95RTCheckbox">95th Percentile RT</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="pct99RTCheckbox">
+              <label for="pct99RTCheckbox">99th Percentile RT</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="errorPctCheckbox" checked>
+              <label for="errorPctCheckbox">Error %</label>
+            </div>
+            <div class="checkbox-item">
               <input type="checkbox" id="errorsCheckbox" checked>
               <label for="errorsCheckbox">Errors</label>
             </div>
@@ -139,7 +159,12 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
             <th>Avg Response Time (ms)</th>
             <th>Min RT (ms)</th>
             <th>Max RT (ms)</th>
+            <th>Median RT (ms)</th>
+            <th>90th % RT (ms)</th>
+            <th>95th % RT (ms)</th>
+            <th>99th % RT (ms)</th>
             <th>Error Count</th>
+            <th>Error %</th>
             <th>Throughput (req/s)</th>
             <th>KB/sec</th>
             <th>Samples</th>
@@ -361,7 +386,12 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
         avgResponseTime: document.getElementById('avgRTCheckbox').checked,
         minResponseTime: document.getElementById('minRTCheckbox').checked,
         maxResponseTime: document.getElementById('maxRTCheckbox').checked,
+        medianResponseTime: document.getElementById('medianRTCheckbox').checked,
+        pct90ResponseTime: document.getElementById('pct90RTCheckbox').checked,
+        pct95ResponseTime: document.getElementById('pct95RTCheckbox').checked,
+        pct99ResponseTime: document.getElementById('pct99RTCheckbox').checked,
         errorCount: document.getElementById('errorsCheckbox').checked,
+        errorPct: document.getElementById('errorPctCheckbox').checked,
         throughput: document.getElementById('throughputCheckbox').checked,
         kbPerSec: document.getElementById('kbPerSecCheckbox').checked
       };
@@ -379,8 +409,28 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
         createChart('maxResponseTime', 'Max Response Time (ms)', '#e74c3c');
       }
       
+      if (selectedMetrics.medianResponseTime) {
+        createChart('medianResponseTime', 'Median Response Time (ms)', '#34495e');
+      }
+      
+      if (selectedMetrics.pct90ResponseTime) {
+        createChart('pct90ResponseTime', '90th Percentile RT (ms)', '#16a085');
+      }
+      
+      if (selectedMetrics.pct95ResponseTime) {
+        createChart('pct95ResponseTime', '95th Percentile RT (ms)', '#d35400');
+      }
+      
+      if (selectedMetrics.pct99ResponseTime) {
+        createChart('pct99ResponseTime', '99th Percentile RT (ms)', '#c0392b');
+      }
+      
       if (selectedMetrics.errorCount) {
         createChart('errorCount', 'Error Count', '#e74c3c');
+      }
+      
+      if (selectedMetrics.errorPct) {
+        createChart('errorPct', 'Error Percentage (%)', '#e74c3c');
       }
       
       if (selectedMetrics.throughput) {
@@ -455,7 +505,12 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
           <td>${test.avgResponseTime}</td>
           <td>${test.minResponseTime}</td>
           <td>${test.maxResponseTime}</td>
+          <td>${test.medianResponseTime}</td>
+          <td>${test.pct90ResponseTime}</td>
+          <td>${test.pct95ResponseTime}</td>
+          <td>${test.pct99ResponseTime}</td>
           <td>${test.errorCount}</td>
+          <td>${test.errorPct}%</td>
           <td>${test.throughput}</td>
           <td>${test.kbPerSec}</td>
           <td>${test.samples}</td>
@@ -488,7 +543,12 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
       const avgRTChange = calculateChange(test1.avgResponseTime, test2.avgResponseTime);
       const minRTChange = calculateChange(test1.minResponseTime, test2.minResponseTime);
       const maxRTChange = calculateChange(test1.maxResponseTime, test2.maxResponseTime);
+      const medianRTChange = calculateChange(test1.medianResponseTime, test2.medianResponseTime);
+      const pct90RTChange = calculateChange(test1.pct90ResponseTime, test2.pct90ResponseTime);
+      const pct95RTChange = calculateChange(test1.pct95ResponseTime, test2.pct95ResponseTime);
+      const pct99RTChange = calculateChange(test1.pct99ResponseTime, test2.pct99ResponseTime);
       const errorChange = calculateChange(test1.errorCount, test2.errorCount);
+      const errorPctChange = calculateChange(test1.errorPct, test2.errorPct, true);
       const throughputChange = calculateChange(test1.throughput, test2.throughput, true);
       const kbPerSecChange = calculateChange(test1.kbPerSec, test2.kbPerSec, true);
       
@@ -528,6 +588,50 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
         </div>
         
         <div class="metric-card">
+          <div class="metric-label">Median Response Time</div>
+          <div class="metric-value">${test1.medianResponseTime} ms</div>
+          <div class="metric-comparison ${medianRTChange.class}">${medianRTChange.text}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">Median Response Time</div>
+          <div class="metric-value">${test2.medianResponseTime} ms</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">90th Percentile RT</div>
+          <div class="metric-value">${test1.pct90ResponseTime} ms</div>
+          <div class="metric-comparison ${pct90RTChange.class}">${pct90RTChange.text}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">90th Percentile RT</div>
+          <div class="metric-value">${test2.pct90ResponseTime} ms</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">95th Percentile RT</div>
+          <div class="metric-value">${test1.pct95ResponseTime} ms</div>
+          <div class="metric-comparison ${pct95RTChange.class}">${pct95RTChange.text}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">95th Percentile RT</div>
+          <div class="metric-value">${test2.pct95ResponseTime} ms</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">99th Percentile RT</div>
+          <div class="metric-value">${test1.pct99ResponseTime} ms</div>
+          <div class="metric-comparison ${pct99RTChange.class}">${pct99RTChange.text}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">99th Percentile RT</div>
+          <div class="metric-value">${test2.pct99ResponseTime} ms</div>
+        </div>
+        
+        <div class="metric-card">
           <div class="metric-label">Error Count</div>
           <div class="metric-value">${test1.errorCount}</div>
           <div class="metric-comparison ${errorChange.class}">${errorChange.text}</div>
@@ -536,6 +640,17 @@ cat > "$OUTPUT_DIR/index.html" << 'EOL'
         <div class="metric-card">
           <div class="metric-label">Error Count</div>
           <div class="metric-value">${test2.errorCount}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">Error Percentage</div>
+          <div class="metric-value">${test1.errorPct}%</div>
+          <div class="metric-comparison ${errorPctChange.class}">${errorPctChange.text}</div>
+        </div>
+        
+        <div class="metric-card">
+          <div class="metric-label">Error Percentage</div>
+          <div class="metric-value">${test2.errorPct}%</div>
         </div>
         
         <div class="metric-card">
