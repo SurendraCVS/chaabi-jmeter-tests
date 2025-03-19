@@ -74,3 +74,28 @@ jobs:
           path: |
             ./jmeter-tests/reports/
             ./jmeter-tests/results/results.jtl
+
+  # ✅ Deploy HTML Report to GitHub Pages
+  deploy:
+    needs: jmeter-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # ✅ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ✅ Download JMeter Report Artifact
+      - name: Download JMeter Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: JMeter-Reports
+          path: ./jmeter-pages
+
+      # ✅ Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages                     # Deploy to GitHub Pages branch
+          folder: ./jmeter-pages/reports       # The folder containing the HTML report
+          target-folder: .                     # Deploy at the root of the GitHub Pages
