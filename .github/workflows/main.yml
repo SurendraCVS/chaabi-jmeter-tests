@@ -264,8 +264,24 @@ jobs:
           </html>
           EOL
 
-          # Add link to historical data in the main index.html
-          sed -i 's#<body>#<body>\n<div style="text-align: center; margin: 20px;"><a href="history/" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">View Historical Comparison</a></div>#' ./jmeter-pages/reports/index.html
+          # Use a more reliable method to add the link to the main index.html
+          if [ -f "./jmeter-pages/reports/index.html" ]; then
+            # Create a temporary file
+            TEMP_FILE=$(mktemp)
+            
+            # Insert link after the <body> tag
+            awk '/<body>/ {
+              print $0;
+              print "<div style=\"text-align: center; margin: 20px;\"><a href=\"history/\" style=\"display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Historical Comparison</a></div>";
+              next;
+            }
+            { print $0 }' "./jmeter-pages/reports/index.html" > "$TEMP_FILE"
+            
+            # Replace the original file with the modified one
+            mv "$TEMP_FILE" "./jmeter-pages/reports/index.html"
+          else
+            echo "Warning: index.html not found in reports directory"
+          fi
 
       # ✅ Display Test Summary
       - name: Display Test Summary
