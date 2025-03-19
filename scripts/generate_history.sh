@@ -14,7 +14,7 @@ CURRENT_DATE=$(date +'%Y-%m-%d_%H-%M-%S')
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "$HISTORY_DIR"
 
-# Save current test results to history
+# Save current test results to history - always preserve every test run
 cp "$RESULTS_FILE" "$HISTORY_DIR/results_$CURRENT_DATE.jtl"
 
 echo "Generating historical comparison data..."
@@ -61,10 +61,11 @@ echo "      \"pct99ResponseTime\": $CURR_PCT99_RT," >> "$OUTPUT_DIR/history.json
 echo "      \"throughput\": $CURR_THROUGHPUT," >> "$OUTPUT_DIR/history.json"
 echo "      \"kbReceived\": $CURR_KB_RECEIVED," >> "$OUTPUT_DIR/history.json"
 echo "      \"kbSent\": $CURR_KB_SENT," >> "$OUTPUT_DIR/history.json"
-echo "      \"isCurrent\": true" >> "$OUTPUT_DIR/history.json"
+echo "      \"isCurrent\": true," >> "$OUTPUT_DIR/history.json"
+echo "      \"id\": \"$CURRENT_DATE\"" >> "$OUTPUT_DIR/history.json"
 echo "    }" >> "$OUTPUT_DIR/history.json"
 
-# Process historical data
+# Process historical data - include ALL tests, no limit
 COUNT=0
 for file in "$HISTORY_DIR"/results_*.jtl; do
   if [[ -f "$file" && "$file" != "$HISTORY_DIR/results_$CURRENT_DATE.jtl" ]]; then
@@ -106,18 +107,15 @@ for file in "$HISTORY_DIR"/results_*.jtl; do
     echo "      \"throughput\": $THROUGHPUT," >> "$OUTPUT_DIR/history.json"
     echo "      \"kbReceived\": $KB_RECEIVED," >> "$OUTPUT_DIR/history.json"
     echo "      \"kbSent\": $KB_SENT," >> "$OUTPUT_DIR/history.json"
-    echo "      \"isCurrent\": false" >> "$OUTPUT_DIR/history.json"
+    echo "      \"isCurrent\": false," >> "$OUTPUT_DIR/history.json"
+    echo "      \"id\": \"$TEST_DATE\"" >> "$OUTPUT_DIR/history.json"
     echo "    }" >> "$OUTPUT_DIR/history.json"
-
+    
     COUNT=$((COUNT+1))
-    # Keep the most recent 20 tests
-    if [ "$COUNT" -ge 20 ]; then
-      break
-    fi
   fi
 done
 
 echo "  ]" >> "$OUTPUT_DIR/history.json"
 echo "}" >> "$OUTPUT_DIR/history.json"
 
-echo "Historical comparison data generated successfully!" 
+echo "Historical comparison data generated successfully with $COUNT previous tests plus current test!" 
