@@ -1,1 +1,0 @@
-# chaabi-jmeter-tests
