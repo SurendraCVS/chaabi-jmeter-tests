@@ -1,19 +1,15 @@
 {
   "tests": [
     {
-      "date": "2025-03-19_13-03-12",
+      "date": "2025-03-19_13-06-17",
       "avgResponseTime": 0,
+      "minResponseTime": 0,
+      "maxResponseTime": 0,
       "errorCount": 0,
       "throughput": 0,
+      "kbPerSec": 0,
+      "samples": 0,
       "isCurrent": true
-    }
-,
-    {
-      "date": "2025-03-19_13-03-12",
-      "avgResponseTime": 0,
-      "errorCount": 0,
-      "throughput": 0,
-      "isCurrent": false
     }
   ]
 }
