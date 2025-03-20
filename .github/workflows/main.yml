@@ -84,6 +84,7 @@ jobs:
           chmod +x ./scripts/generate_history.sh
           chmod +x ./scripts/generate_comparison_page.sh
           chmod +x ./scripts/run_comparison.sh
+          chmod +x ./scripts/launch_comparison_viewer.sh
 
       # ✅ Generate historical comparison
       - name: Generate Historical Comparison
@@ -92,6 +93,11 @@ jobs:
           mkdir -p ./jmeter-pages/history
           chmod -R 755 ./jmeter-pages/history
           ./scripts/run_comparison.sh ./jmeter-tests/results/results.jtl
+
+      # ✅ Set up comparison viewer
+      - name: Set up Comparison Viewer
+        run: |
+          ./scripts/launch_comparison_viewer.sh
 
       # ✅ Display Test Summary
       - name: Display Test Summary
@@ -149,37 +155,32 @@ jobs:
           mkdir -p ./public/reports
           cp -r ./jmeter-pages/reports/* ./public/reports/
           
-          # Copy historical data to public/history
+          # Copy history data to public/history
           mkdir -p ./public/history
           cp -r ./jmeter-pages/history/* ./public/history/
           
-          # Ensure proper permissions
-          chmod -R 755 ./public
-          
-          # Create 404.html in reports directory
-          cp ./public/reports/index.html ./public/reports/404.html
-          
-          # Create an index.html in the root that redirects to reports/
-          echo '<!DOCTYPE html>
+          # Create index.html that redirects to reports
+          cat > ./public/index.html << 'EOL'
+          <!DOCTYPE html>
           <html>
-          <head>
-            <meta http-equiv="refresh" content="0; url=reports/">
-            <title>Redirecting to JMeter Reports</title>
-          </head>
-          <body>
-            <p>If you are not redirected automatically, <a href="reports/">click here</a>.</p>
-          </body>
-          </html>' > ./public/index.html
-          
-          # Create top-level 404.html file
-          cp ./public/index.html ./public/404.html
+            <head>
+              <meta charset="UTF-8">
+              <meta http-equiv="refresh" content="0;url=reports/">
+              <title>JMeter Test Reports</title>
+            </head>
+            <body>
+              <p>If you are not redirected automatically, follow this <a href="reports/">link to the reports</a>.</p>
+            </body>
+          </html>
+          EOL
 
       # ✅ Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          branch: gh-pages                # Target branch for GitHub Pages
-          folder: ./public                # Folder containing the HTML reports
-          token: ${{ secrets.GITHUB_TOKEN }}
-          force: true
-          attempt-limit: 3 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          full_commit_message: 'Deploy JMeter test reports from ${{ github.sha }}' 
