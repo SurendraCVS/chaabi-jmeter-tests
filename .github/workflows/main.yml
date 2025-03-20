@@ -49,7 +49,7 @@ jobs:
       - name: Install Node.js dependencies
         run: |
           cd scripts
-          npm ci
+          npm install
 
       # ✅ Create report directories
       - name: Create report directories
