@@ -1,1 +1,22 @@
-{"tests":[]}
+{
+  "tests": [
+    {
+      "date": "2025-03-20_10-53-17",
+      "samples": 0,
+      "fail": 0,
+      "errorPct": 0.00,
+      "avgResponseTime": 0,
+      "minResponseTime": 0,
+      "maxResponseTime": 0,
+      "medianResponseTime": 0,
+      "pct90ResponseTime": 0,
+      "pct95ResponseTime": 0,
+      "pct99ResponseTime": 0,
+      "throughput": 0,
+      "kbReceived": 0,
+      "kbSent": 0,
+      "isCurrent": true,
+      "id": "2025-03-20_10-53-17"
+    }
+  ]
+}

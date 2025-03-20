@@ -1,0 +1,44 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1742467985957,5786,https://chaabi-dev.ipxp.in/login,200,OK,Thread Group 1-1,text,true,,22629843,18488,1,1,https://chaabi-dev.ipxp.in/login,1278,0,531
+1742467985957,1281,https://chaabi-dev.ipxp.in/login-0,200,OK,Thread Group 1-1,text,true,,1603,650,1,1,https://chaabi-dev.ipxp.in/login,1278,0,531
+1742467987276,4467,https://chaabi-dev.ipxp.in/login-1,200,OK,Thread Group 1-1,text,true,,16912847,15840,1,1,https://chaabi-dev.ipxp.in/src/assets/images/logoIcon.png,771,0,0
+1742467987276,771,https://chaabi-dev.ipxp.in/login-0,200,OK,,text,true,,1602,675,0,0,https://chaabi-dev.ipxp.in/src/assets/images/logoIcon.png,771,0,0
+1742467988053,3690,https://chaabi-dev.ipxp.in/login-1,200,OK,ResDownload-Thread-3,text,true,,11197329,13086,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/images/logoIcon.png,731,0,0
+1742467988053,732,https://chaabi-dev.ipxp.in/login-0,200,OK,,text,true,,1627,686,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/images/logoIcon.png,731,0,0
+1742467988788,2955,https://chaabi-dev.ipxp.in/login-1,200,OK,ResDownload-Thread-4,text,true,,5604437,10238,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/images/logoIcon.png,748,0,0
+1742467988788,748,https://chaabi-dev.ipxp.in/login-0,200,OK,,text,true,,1606,697,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/images/logoIcon.png,748,0,0
+1742467989540,2203,https://chaabi-dev.ipxp.in/login-1,200,OK,ResDownload-Thread-9,text,true,,11555,7379,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,728,0,0
+1742467989540,728,https://chaabi-dev.ipxp.in/login-0,200,OK,,text,true,,1597,708,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,728,0,0
+1742467990270,1473,https://chaabi-dev.ipxp.in/login-1,200,OK,ResDownload-Thread-10,text,true,,7397,4425,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,726,0,0
+1742467990270,726,https://chaabi-dev.ipxp.in/login-0,200,OK,,text,true,,1604,719,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,726,0,0
+1742467990998,745,https://chaabi-dev.ipxp.in/login-1,200,OK,ResDownload-Thread-8,text,true,,3210,1460,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,745,0,0
+1742467990998,745,https://chaabi-dev.ipxp.in/login-0,Non HTTP response code: java.lang.Exception,Non HTTP response message: Maximum frame/iframe nesting depth exceeded.,ResDownload-Thread-5,text,false,,1605,730,0,0,https://chaabi-dev.ipxp.in/src/assets/src/assets/src/assets/src/assets/src/assets/src/assets/images/logoIcon.png,745,0,0
+1742467990998,25,https://chaabi-dev.ipxp.in/login-2,304,Not Modified,ResDownload-Thread-8,,true,,852,735,0,0,https://chaabi-dev.ipxp.in/fav32.png,0,0,0
+1742467990998,24,https://chaabi-dev.ipxp.in/login-3,304,Not Modified,ResDownload-Thread-8,,true,,864,755,0,0,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,0,0,0
+1742467990999,32,https://chaabi-dev.ipxp.in/login-4,304,Not Modified,ResDownload-Thread-8,,true,,867,756,0,0,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,0,0,0
+1742467990270,22,https://chaabi-dev.ipxp.in/login-2,304,Not Modified,ResDownload-Thread-10,,true,,854,735,0,0,https://chaabi-dev.ipxp.in/fav32.png,0,0,0
+1742467990270,20,https://chaabi-dev.ipxp.in/login-3,304,Not Modified,ResDownload-Thread-10,,true,,860,755,0,0,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,0,0,0
+1742467990270,24,https://chaabi-dev.ipxp.in/login-4,304,Not Modified,ResDownload-Thread-10,,true,,847,756,0,0,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,0,0,0
+1742467989540,25,https://chaabi-dev.ipxp.in/login-2,304,Not Modified,ResDownload-Thread-9,,true,,848,735,0,0,https://chaabi-dev.ipxp.in/fav32.png,0,0,0
+1742467989542,475,https://chaabi-dev.ipxp.in/login-3,200,OK,ResDownload-Thread-9,text,true,,5589575,671,0,0,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,46,0,0
+1742467989541,21,https://chaabi-dev.ipxp.in/login-4,304,Not Modified,ResDownload-Thread-9,,true,,853,756,0,0,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,0,0,0
+1742467988788,21,https://chaabi-dev.ipxp.in/login-2,304,Not Modified,ResDownload-Thread-4,,true,,847,735,0,0,https://chaabi-dev.ipxp.in/fav32.png,0,0,0
+1742467988787,1228,https://chaabi-dev.ipxp.in/login-3,200,OK,ResDownload-Thread-4,text,true,,5589572,671,0,0,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,27,0,0
+1742467988788,23,https://chaabi-dev.ipxp.in/login-4,304,Not Modified,ResDownload-Thread-4,,true,,846,756,0,0,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,0,0,0
+1742467988054,22,https://chaabi-dev.ipxp.in/login-2,304,Not Modified,ResDownload-Thread-3,,true,,846,735,0,0,https://chaabi-dev.ipxp.in/fav32.png,0,0,0
+1742467988054,1965,https://chaabi-dev.ipxp.in/login-3,200,OK,ResDownload-Thread-3,text,true,,5589570,671,0,0,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,522,0,36
+1742467988055,79,https://chaabi-dev.ipxp.in/login-4,200,OK,ResDownload-Thread-3,text,true,,123500,673,0,0,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,62,0,37
+1742467987276,774,https://chaabi-dev.ipxp.in/login-2,200,OK,Thread Group 1-1,bin,true,,2318,654,1,1,https://chaabi-dev.ipxp.in/fav32.png,774,0,40
+1742467987276,2733,https://chaabi-dev.ipxp.in/login-3,200,OK,Thread Group 1-1,text,true,,5589568,671,1,1,https://chaabi-dev.ipxp.in/static/js/main.12bdcdee.js,1282,0,46
+1742467987277,797,https://chaabi-dev.ipxp.in/login-4,200,OK,Thread Group 1-1,text,true,,123507,673,1,1,https://chaabi-dev.ipxp.in/static/css/main.98b8aad3.css,780,0,46
+1742467985906,5786,Launch,200,"Number of samples in transaction : 1, number of failing samples : 0",Thread Group 1-1,,true,,22629843,18488,1,1,null,1278,55,531
+1742467991747,1438,https://chaabi-dev.ipxp.in/api/login/,200,OK,Thread Group 1-1,text,true,,1349,525,1,1,https://chaabi-dev.ipxp.in/api/login/,1438,0,0
+1742467993189,341,https://chaabi-dev.ipxp.in/api/user-data/,200,OK,Thread Group 1-1,text,true,,1732,524,1,1,https://chaabi-dev.ipxp.in/api/user-data/,341,0,0
+1742467993531,383,https://chaabi-dev.ipxp.in/api/user-data/,200,OK,Thread Group 1-1,text,true,,1730,524,1,1,https://chaabi-dev.ipxp.in/api/user-data/,383,0,0
+1742467993915,338,https://chaabi-dev.ipxp.in/api/status/financial/?page=1&per_page=100000,200,OK,Thread Group 1-1,text,true,,1039,554,1,1,https://chaabi-dev.ipxp.in/api/status/financial/?per_page=100000&page=1,337,0,0
+1742467994254,335,https://chaabi-dev.ipxp.in/api/status/operational/?page=1&per_page=100000,200,OK,Thread Group 1-1,text,true,,1043,556,1,1,https://chaabi-dev.ipxp.in/api/status/operational/?per_page=100000&page=1,335,0,0
+1742467994589,337,https://chaabi-dev.ipxp.in/api/brands/?page=1&per_page=100000,200,OK,Thread Group 1-1,text,true,,1030,544,1,1,https://chaabi-dev.ipxp.in/api/brands/?per_page=100000&page=1,337,0,0
+1742467994927,334,https://chaabi-dev.ipxp.in/api/site-report/?page=1&per_page=20&search=,200,OK,Thread Group 1-1,text,true,,1037,553,1,1,https://chaabi-dev.ipxp.in/api/site-report/?per_page=20&search=&page=1,334,0,0
+1742467991747,3506,C_Login,200,"Number of samples in transaction : 7, number of failing samples : 0",Thread Group 1-1,,true,,8960,3780,1,1,null,3505,9,0
+1742467995262,323,https://chaabi-dev.ipxp.in/api/logout/,200,OK,Thread Group 1-1,text,true,,1080,606,1,1,https://chaabi-dev.ipxp.in/api/logout/,323,0,0
+1742467995262,323,C_Logout,200,"Number of samples in transaction : 1, number of failing samples : 0",Thread Group 1-1,,true,,1080,606,1,1,null,323,1,0
