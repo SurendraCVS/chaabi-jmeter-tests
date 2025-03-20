@@ -69,6 +69,15 @@ jobs:
           path: ./jmeter-pages/history
           retention-days: 30  # Keep artifacts for 30 days
 
+      # ✅ Create empty history file if no previous results
+      - name: Create empty history file if needed
+        run: |
+          if [ ! -f "./jmeter-pages/history/history.json" ]; then
+            echo "No previous history file found. Creating an empty one."
+            mkdir -p ./jmeter-pages/history
+            echo '{"tests":[]}' > ./jmeter-pages/history/history.json
+          fi
+
       # ✅ Run JMeter Tests
       - name: Run JMeter Tests
         run: |

@@ -9,21 +9,31 @@ set -e
 SCRIPTS_DIR="$(dirname "$0")"
 BASE_DIR="$(dirname "$SCRIPTS_DIR")"
 REPORTS_DIR="$BASE_DIR/jmeter-pages/reports"
-HISTORY_DIR="$REPORTS_DIR/history"
+HISTORY_DIR="$BASE_DIR/jmeter-pages/history"
 VIEWER_DIR="$REPORTS_DIR/comparison"
 
 # Create the comparison viewer directory
 mkdir -p "$VIEWER_DIR"
+mkdir -p "$VIEWER_DIR/history"
 
 # Copy the comparison viewer files to the reports directory
 cp "$SCRIPTS_DIR/comparison_viewer.html" "$VIEWER_DIR/index.html"
 cp "$SCRIPTS_DIR/comparison_viewer.js" "$VIEWER_DIR/comparison_viewer.js"
 
-# Check if history.json exists
-if [ ! -f "$HISTORY_DIR/history.json" ]; then
-    echo "Error: No history data found at $HISTORY_DIR/history.json"
-    echo "Please run a test first to generate historical data."
-    exit 1
+# Check if history.json exists and copy it to comparison viewer directory
+if [ -f "$HISTORY_DIR/history.json" ]; then
+    echo "Found history.json, copying to comparison viewer directory"
+    # Also copy to the comparison/history folder to ensure it's accessible
+    cp "$HISTORY_DIR/history.json" "$VIEWER_DIR/history/history.json"
+else
+    echo "Warning: No history data found at $HISTORY_DIR/history.json"
+    echo "Creating a sample history file for testing"
+    # Create a minimal history.json with empty test array for first-time usage
+    cat > "$VIEWER_DIR/history/history.json" << 'EOL'
+{
+  "tests": []
+}
+EOL
 fi
 
 # Add a link to the comparison viewer in the main report
