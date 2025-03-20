@@ -14,7 +14,7 @@ This project provides tools to track JMeter test history and visualize performan
 ```
 chaabi-jmeter-tests/
 ├── .github/workflows/           # GitHub Actions workflows
-│   └── update-history.yml       # Workflow to update history files
+│   └── main.yml                 # Main workflow including history updates
 ├── reports/                     # JMeter test reports
 │   ├── [timestamp]/             # Individual test runs
 │   └── history/                 # History tracking
