@@ -12,34 +12,86 @@ REPORTS_DIR="$BASE_DIR/jmeter-pages/reports"
 HISTORY_DIR="$BASE_DIR/jmeter-pages/history"
 VIEWER_DIR="$REPORTS_DIR/comparison"
 
+echo "Setting up JMeter Test Comparison Viewer..."
+echo "Scripts directory: $SCRIPTS_DIR"
+echo "Base directory: $BASE_DIR"
+echo "Reports directory: $REPORTS_DIR"
+echo "History directory: $HISTORY_DIR"
+echo "Viewer directory: $VIEWER_DIR"
+
 # Create the comparison viewer directory
 mkdir -p "$VIEWER_DIR"
 mkdir -p "$VIEWER_DIR/history"
+echo "Created comparison viewer directories"
 
 # Copy the comparison viewer files to the reports directory
 cp "$SCRIPTS_DIR/comparison_viewer.html" "$VIEWER_DIR/index.html"
 cp "$SCRIPTS_DIR/comparison_viewer.js" "$VIEWER_DIR/comparison_viewer.js"
+echo "Copied comparison viewer files"
 
-# Check if history.json exists and copy it to comparison viewer directory
-if [ -f "$HISTORY_DIR/history.json" ]; then
-    echo "Found history.json, copying to comparison viewer directory"
-    # Also copy to the comparison/history folder to ensure it's accessible
-    cp "$HISTORY_DIR/history.json" "$VIEWER_DIR/history/history.json"
-else
-    echo "Warning: No history data found at $HISTORY_DIR/history.json"
-    echo "Creating a sample history file for testing"
-    # Create a minimal history.json with empty test array for first-time usage
-    cat > "$VIEWER_DIR/history/history.json" << 'EOL'
+# Check all possible locations for history.json and copy it to the comparison viewer directory
+FOUND_HISTORY=false
+
+# Define all possible locations of history.json
+HISTORY_LOCATIONS=(
+  "$HISTORY_DIR/history.json"
+  "$REPORTS_DIR/history/history.json"
+  "$BASE_DIR/history/history.json"
+)
+
+for LOCATION in "${HISTORY_LOCATIONS[@]}"; do
+  if [ -f "$LOCATION" ]; then
+    echo "Found history.json at $LOCATION"
+    cp "$LOCATION" "$VIEWER_DIR/history/history.json"
+    FOUND_HISTORY=true
+    break
+  fi
+done
+
+# Create a minimal history file if none was found
+if [ "$FOUND_HISTORY" = false ]; then
+  echo "Warning: No history data found in any known location"
+  echo "Creating a sample history file with current date for demonstration"
+  
+  # Get current date in the format expected by the history.json
+  CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+  
+  # Create a sample history.json with one test
+  cat > "$VIEWER_DIR/history/history.json" << EOF
 {
-  "tests": []
+  "tests": [
+    {
+      "id": "$CURRENT_DATE",
+      "date": "$CURRENT_DATE",
+      "samples": 1000,
+      "fail": 10,
+      "errorPct": 1.0,
+      "avgResponseTime": 250,
+      "minResponseTime": 50,
+      "maxResponseTime": 1200,
+      "medianResponseTime": 200,
+      "pct90ResponseTime": 400,
+      "pct95ResponseTime": 500,
+      "pct99ResponseTime": 700,
+      "throughput": 20.5,
+      "kbReceived": 150.2,
+      "kbSent": 85.3,
+      "isCurrent": true
+    }
+  ]
 }
-EOL
+EOF
 fi
+
+echo "History file details:"
+ls -la "$VIEWER_DIR/history/history.json" || echo "File not found"
+cat "$VIEWER_DIR/history/history.json" | head -20 || echo "Cannot display file contents"
 
 # Add a link to the comparison viewer in the main report
 if [ -f "$REPORTS_DIR/index.html" ]; then
     # Check if the link already exists
     if ! grep -q "View Comparison Tool" "$REPORTS_DIR/index.html"; then
+        echo "Adding link to main report"
         # Create a temporary file
         TEMP_FILE=$(mktemp)
         
@@ -67,7 +119,11 @@ if [ -f "$REPORTS_DIR/index.html" ]; then
         # Replace the original file with the modified one
         mv "$TEMP_FILE" "$REPORTS_DIR/index.html"
         echo "Added link to comparison tool in the main report"
+    else
+        echo "Link to comparison tool already exists in the main report"
     fi
+else
+    echo "Warning: Main report index.html not found at $REPORTS_DIR/index.html"
 fi
 
 # Display success message
