@@ -1,0 +1,45 @@
+name: Update JMeter History
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'reports/**'  # Only run when reports are updated
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  update-history:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # This ensures we get the full history for commits
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq  # Install jq for JSON processing
+      
+      - name: Update history file
+        run: |
+          chmod +x scripts/update_history.sh
+          scripts/update_history.sh
+      
+      - name: Copy history files to key locations
+        run: |
+          mkdir -p reports/history
+          mkdir -p scripts/history
+          mkdir -p history
+          
+          # Copy the updated history file to all locations
+          cp scripts/history/history.json reports/history/history.json || true
+          cp scripts/history/history.json history/history.json || true
+      
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'history/*.json reports/history/*.json scripts/history/*.json'
+          message: 'Update test history [skip ci]'
+          default_author: github_actions 

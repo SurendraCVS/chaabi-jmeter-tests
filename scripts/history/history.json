@@ -1,1 +1,74 @@
-{"tests":[{"id":"2024_03_20_10_00_00","date":"2024_03_20_10_00_00","samples":1000,"fail":10,"errorPct":1.0,"avgResponseTime":250,"minResponseTime":50,"maxResponseTime":1200,"medianResponseTime":200,"pct90ResponseTime":400,"pct95ResponseTime":500,"pct99ResponseTime":700,"throughput":20.5,"kbReceived":150.2,"kbSent":85.3,"isCurrent":true},{"id":"2024_03_19_10_00_00","date":"2024_03_19_10_00_00","samples":950,"fail":15,"errorPct":1.58,"avgResponseTime":300,"minResponseTime":60,"maxResponseTime":1500,"medianResponseTime":240,"pct90ResponseTime":450,"pct95ResponseTime":600,"pct99ResponseTime":900,"throughput":18.2,"kbReceived":140.5,"kbSent":80.1,"isCurrent":false}],"lastUpdated":"2024-03-20T10:00:00Z"}
+{
+  "tests": [
+    {
+      "timestamp": "2023-11-01_09-30-00",
+      "test": "Login Test",
+      "success_rate": 98.5,
+      "avg_response_time": 320,
+      "report_path": "reports/2023-11-01_09-30-00"
+    },
+    {
+      "timestamp": "2023-11-01_09-30-00",
+      "test": "API Performance Test",
+      "success_rate": 99.2,
+      "avg_response_time": 210,
+      "report_path": "reports/2023-11-01_09-30-00"
+    },
+    {
+      "timestamp": "2023-11-03_14-15-00",
+      "test": "Login Test",
+      "success_rate": 97.8,
+      "avg_response_time": 350,
+      "report_path": "reports/2023-11-03_14-15-00"
+    },
+    {
+      "timestamp": "2023-11-03_14-15-00",
+      "test": "API Performance Test",
+      "success_rate": 99.5,
+      "avg_response_time": 200,
+      "report_path": "reports/2023-11-03_14-15-00"
+    },
+    {
+      "timestamp": "2023-11-05_10-45-00",
+      "test": "Login Test",
+      "success_rate": 99.1,
+      "avg_response_time": 290,
+      "report_path": "reports/2023-11-05_10-45-00"
+    },
+    {
+      "timestamp": "2023-11-05_10-45-00",
+      "test": "API Performance Test",
+      "success_rate": 98.9,
+      "avg_response_time": 230,
+      "report_path": "reports/2023-11-05_10-45-00"
+    },
+    {
+      "timestamp": "2023-11-05_10-45-00",
+      "test": "Database Query Test",
+      "success_rate": 95.5,
+      "avg_response_time": 450,
+      "report_path": "reports/2023-11-05_10-45-00"
+    },
+    {
+      "timestamp": "2023-11-08_16-20-00",
+      "test": "Login Test",
+      "success_rate": 99.3,
+      "avg_response_time": 280,
+      "report_path": "reports/2023-11-08_16-20-00"
+    },
+    {
+      "timestamp": "2023-11-08_16-20-00",
+      "test": "API Performance Test",
+      "success_rate": 99.8,
+      "avg_response_time": 190,
+      "report_path": "reports/2023-11-08_16-20-00"
+    },
+    {
+      "timestamp": "2023-11-08_16-20-00",
+      "test": "Database Query Test",
+      "success_rate": 97.2,
+      "avg_response_time": 420,
+      "report_path": "reports/2023-11-08_16-20-00"
+    }
+  ]
+}

@@ -11,35 +11,36 @@ echo "================================="
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-# Check if history directory exists, create if not
-if [ ! -d "../reports/history" ]; then
-    echo "Creating history directory..."
-    mkdir -p "../reports/history"
-fi
+# Create all possible history directories to ensure the file can be found
+echo "Creating history directories in multiple locations..."
+mkdir -p "../reports/history"
+mkdir -p "./history"
+mkdir -p "history"
+mkdir -p "../history"
 
 # Check if history.json exists, create a sample file if not
 if [ ! -f "../reports/history/history.json" ]; then
     echo "Creating sample history.json file..."
     cat > "../reports/history/history.json" << EOF
 {
-    "tests": [
-        {
+  "tests": [
+    {
             "id": "2024_03_20_10_00_00",
             "date": "2024_03_20_10_00_00",
-            "samples": 1000,
-            "fail": 10,
-            "errorPct": 1.0,
-            "avgResponseTime": 250,
-            "minResponseTime": 50,
-            "maxResponseTime": 1200,
-            "medianResponseTime": 200,
-            "pct90ResponseTime": 400,
-            "pct95ResponseTime": 500,
-            "pct99ResponseTime": 700,
-            "throughput": 20.5,
-            "kbReceived": 150.2,
-            "kbSent": 85.3,
-            "isCurrent": true
+      "samples": 1000,
+      "fail": 10,
+      "errorPct": 1.0,
+      "avgResponseTime": 250,
+      "minResponseTime": 50,
+      "maxResponseTime": 1200,
+      "medianResponseTime": 200,
+      "pct90ResponseTime": 400,
+      "pct95ResponseTime": 500,
+      "pct99ResponseTime": 700,
+      "throughput": 20.5,
+      "kbReceived": 150.2,
+      "kbSent": 85.3,
+      "isCurrent": true
         },
         {
             "id": "2024_03_19_10_00_00",
@@ -66,16 +67,26 @@ EOF
     echo "Sample history.json file created."
 fi
 
+# Copy history.json to all directories to ensure it can be found
+echo "Copying history.json to all locations..."
+cp "../reports/history/history.json" "./history/history.json"
+cp "../reports/history/history.json" "history/history.json"
+cp "../reports/history/history.json" "../history/history.json"
+
 # Debug information
-echo "Checking history.json..."
-if [ -f "../reports/history/history.json" ]; then
-    echo "✅ history.json exists at: $(realpath "../reports/history/history.json")"
-    echo "Contents:"
-    cat "../reports/history/history.json" | head -20
-    echo "..."
-else
-    echo "❌ history.json not found!"
-fi
+echo "Checking history.json in various locations..."
+for LOCATION in "../reports/history/history.json" "./history/history.json" "history/history.json" "../history/history.json"; do
+    if [ -f "$LOCATION" ]; then
+        echo "✅ history.json exists at: $(realpath "$LOCATION")"
+    else
+        echo "❌ history.json not found at: $LOCATION"
+    fi
+done
+
+echo ""
+echo "Contents of history.json:"
+cat "../reports/history/history.json" | head -20
+echo "..."
 
 echo ""
 echo "Checking comparison_viewer.html..."

@@ -18,26 +18,41 @@ async function init() {
     try {
         console.log("Initializing JMeter Test Comparison Viewer...");
         
+        // Debug the tab elements
+        debugTabElements();
+        
         // Try multiple possible paths to find history.json
         let response;
         let historyPaths = [
-            '../reports/history/history.json',
-            '../../history/history.json',
-            '../history/history.json',
-            './history/history.json',
-            './jmeter-pages/history/history.json',
-            '../jmeter-pages/history/history.json',
-            '/history/history.json',
-            '/jmeter-pages/history/history.json'
+            './history/history.json',                // Current directory
+            '../reports/history/history.json',       // One level up in reports
+            'history/history.json',                  // Relative from current
+            '../history/history.json',               // One level up
+            '../../history/history.json',            // Two levels up
+            './jmeter-pages/history/history.json',   // In jmeter-pages subdirectory
+            '../jmeter-pages/history/history.json',  // One level up in jmeter-pages
+            '/history/history.json',                 // From root
+            '/jmeter-pages/history/history.json',    // From root in jmeter-pages
+            '/chaabi-jmeter-tests/reports/history/history.json', // Full path from root
+            './reports/history/history.json',        // Relative to current in reports
+            'reports/history/history.json'           // No leading ./
         ];
         
         console.log("Attempting to load history.json from multiple paths...");
+        console.log("Current window location:", window.location.href);
         
         // Try each path until one works
         for (const path of historyPaths) {
             try {
                 console.log(`Trying path: ${path}`);
-                response = await fetch(path);
+                response = await fetch(path, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
                 if (response.ok) {
                     console.log(`Found history.json at: ${path}`);
                     break;
@@ -90,6 +105,9 @@ async function init() {
         // Make sure Bootstrap tab functionality is working
         setupTabNavigation();
         
+        // Add a direct access button to the history tab
+        addHistoryAccessButton();
+        
     } catch (error) {
         console.error('Error initializing comparison viewer:', error);
         document.body.innerHTML = `
@@ -112,6 +130,129 @@ async function init() {
             </div>
         `;
     }
+}
+
+/**
+ * Debug tab elements to check what might be wrong
+ */
+function debugTabElements() {
+    console.log("Debugging tab elements...");
+    
+    // Check if history tab exists
+    const historyTab = document.getElementById('history-tab');
+    if (historyTab) {
+        console.log("✅ History tab found:", historyTab);
+    } else {
+        console.error("❌ History tab not found");
+        // Try to create it if it doesn't exist
+        createHistoryTabIfMissing();
+    }
+    
+    // Check if history pane exists
+    const historyPane = document.getElementById('history');
+    if (historyPane) {
+        console.log("✅ History pane found:", historyPane);
+    } else {
+        console.error("❌ History pane not found");
+    }
+    
+    // Check Bootstrap
+    if (typeof bootstrap !== 'undefined') {
+        console.log("✅ Bootstrap JS is loaded");
+    } else {
+        console.error("❌ Bootstrap JS is not loaded");
+    }
+}
+
+/**
+ * Creates the history tab if it doesn't exist
+ */
+function createHistoryTabIfMissing() {
+    console.log("Attempting to create missing history tab...");
+    
+    const viewTabs = document.getElementById('viewTabs');
+    if (!viewTabs) {
+        console.error("Cannot find the tabs container");
+        return;
+    }
+    
+    // Create history tab if missing
+    if (!document.getElementById('history-tab')) {
+        const historyTabLi = document.createElement('li');
+        historyTabLi.className = 'nav-item';
+        historyTabLi.setAttribute('role', 'presentation');
+        historyTabLi.innerHTML = `
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" 
+                    type="button" role="tab" aria-controls="history" aria-selected="false">
+                Test History
+            </button>
+        `;
+        viewTabs.appendChild(historyTabLi);
+        console.log("Created history tab");
+    }
+    
+    // Create history pane if missing
+    const viewTabsContent = document.getElementById('viewTabsContent');
+    if (viewTabsContent && !document.getElementById('history')) {
+        const historyPane = document.createElement('div');
+        historyPane.className = 'tab-pane fade';
+        historyPane.id = 'history';
+        historyPane.setAttribute('role', 'tabpanel');
+        historyPane.setAttribute('aria-labelledby', 'history-tab');
+        historyPane.innerHTML = `
+            <div class="history-tab">
+                <h3>Test History</h3>
+                <div class="history-list" id="historyList">
+                    <!-- History items will be populated here -->
+                    <div class="text-center my-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading history data...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        viewTabsContent.appendChild(historyPane);
+        console.log("Created history pane");
+    }
+}
+
+/**
+ * Adds a direct access button to the history tab
+ */
+function addHistoryAccessButton() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    
+    const buttonDiv = document.createElement('div');
+    buttonDiv.className = 'text-center mt-3 mb-3';
+    buttonDiv.innerHTML = `
+        <button id="directHistoryButton" class="btn btn-primary">
+            <i class="bi bi-clock-history"></i> View Test History
+        </button>
+    `;
+    
+    // Insert after the debug info if it exists, otherwise at the beginning
+    const debugInfo = document.getElementById('debugInfo');
+    if (debugInfo) {
+        debugInfo.after(buttonDiv);
+    } else {
+        container.prepend(buttonDiv);
+    }
+    
+    // Add click handler
+    document.getElementById('directHistoryButton').addEventListener('click', () => {
+        console.log("Direct history button clicked");
+        const historyTab = document.getElementById('history-tab');
+        if (historyTab) {
+            console.log("Clicking history tab");
+            historyTab.click();
+        } else {
+            console.error("Cannot find history tab");
+            alert("History tab not found. Please check the console for more details.");
+        }
+    });
 }
 
 /**
