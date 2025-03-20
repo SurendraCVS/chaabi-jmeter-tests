@@ -79,11 +79,16 @@ async function init() {
             createSampleTestData();
         }
         
-        // Populate test selectors
+        // Populate test selectors and history list
         populateTestSelectors();
+        populateHistoryList();
         
         // Set up event listeners
         document.getElementById('compareBtn').addEventListener('click', compareTests);
+        setupHistoryEventListeners();
+        
+        // Make sure Bootstrap tab functionality is working
+        setupTabNavigation();
         
     } catch (error) {
         console.error('Error initializing comparison viewer:', error);
@@ -200,6 +205,338 @@ function populateTestSelectors() {
         currentSelector.selectedIndex = 0; // Current test
         baselineSelector.selectedIndex = 1; // Second most recent test
     }
+}
+
+/**
+ * Populates the history list with all available test runs
+ */
+function populateHistoryList() {
+    const historyList = document.getElementById('historyList');
+    historyList.innerHTML = '';
+    
+    // Add selection controls at the top
+    const selectionControls = document.createElement('div');
+    selectionControls.className = 'mb-3 p-2 bg-light rounded';
+    selectionControls.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                <h5 class="mb-0">Select tests to compare</h5>
+                <small class="text-muted">Select two test runs to compare their results</small>
+            </div>
+            <button id="historyCompareBtn" class="btn btn-primary" disabled>Compare Selected</button>
+        </div>
+        <div id="selectedTests" class="d-flex gap-2">
+            <span class="badge bg-secondary p-2">No tests selected</span>
+        </div>
+    `;
+    historyList.appendChild(selectionControls);
+    
+    // Create a container for the test items
+    const testsContainer = document.createElement('div');
+    testsContainer.className = 'history-items mt-3';
+    historyList.appendChild(testsContainer);
+
+    // Add test items
+    allTests.forEach((test, index) => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        historyItem.setAttribute('data-test-index', index);
+
+        const date = formatDate(test.date);
+        const status = test.isCurrent ? ' (Current)' : '';
+        
+        historyItem.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input test-selector" type="checkbox" value="${index}" id="test-${index}">
+                    <label class="form-check-label" for="test-${index}">
+                        <strong>${date}${status}</strong>
+                        <div class="text-muted small">
+                            Samples: ${test.samples} | 
+                            Avg RT: ${test.avgResponseTime}ms | 
+                            Error Rate: ${test.errorPct}%
+                        </div>
+                    </label>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary view-btn me-2" data-test-index="${index}">
+                        <i class="bi bi-eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary quick-compare-btn" data-test-index="${index}">
+                        Quick Compare
+                    </button>
+                </div>
+            </div>
+        `;
+
+        testsContainer.appendChild(historyItem);
+    });
+}
+
+/**
+ * Sets up event listeners for history functionality
+ */
+function setupHistoryEventListeners() {
+    const historyList = document.getElementById('historyList');
+    
+    // Track selected tests
+    let selectedTests = [];
+    const compareBtn = document.getElementById('historyCompareBtn');
+    const updateCompareBtn = () => {
+        compareBtn.disabled = selectedTests.length !== 2;
+    };
+    
+    // Update selected tests display
+    const updateSelectedDisplay = () => {
+        const selectedDisplay = document.getElementById('selectedTests');
+        if (selectedTests.length === 0) {
+            selectedDisplay.innerHTML = `<span class="badge bg-secondary p-2">No tests selected</span>`;
+        } else {
+            selectedDisplay.innerHTML = selectedTests.map(index => {
+                const test = allTests[index];
+                const date = formatDate(test.date);
+                return `
+                    <span class="badge bg-primary p-2 d-flex align-items-center">
+                        ${date}
+                        <button class="btn-close btn-close-white ms-2" data-remove-index="${index}" aria-label="Remove"></button>
+                    </span>
+                `;
+            }).join('');
+            
+            // Add event listeners to the remove buttons
+            selectedDisplay.querySelectorAll('.btn-close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const removeIndex = e.target.getAttribute('data-remove-index');
+                    selectedTests = selectedTests.filter(index => index != removeIndex);
+                    
+                    // Also uncheck the corresponding checkbox
+                    const checkbox = document.getElementById(`test-${removeIndex}`);
+                    if (checkbox) checkbox.checked = false;
+                    
+                    updateSelectedDisplay();
+                    updateCompareBtn();
+                });
+            });
+        }
+    };
+    
+    // Handle checkbox selection
+    historyList.addEventListener('change', (e) => {
+        if (e.target.matches('.test-selector')) {
+            const index = parseInt(e.target.value);
+            
+            if (e.target.checked) {
+                // If already have 2 selected, remove the oldest one
+                if (selectedTests.length >= 2) {
+                    const oldestIndex = selectedTests[0];
+                    const oldCheckbox = document.getElementById(`test-${oldestIndex}`);
+                    if (oldCheckbox) oldCheckbox.checked = false;
+                    selectedTests.shift();
+                }
+                selectedTests.push(index);
+            } else {
+                selectedTests = selectedTests.filter(i => i !== index);
+            }
+            
+            updateSelectedDisplay();
+            updateCompareBtn();
+        }
+    });
+    
+    // Handle compare button click
+    compareBtn.addEventListener('click', () => {
+        if (selectedTests.length === 2) {
+            // Set the current test as the newest selected one
+            document.getElementById('currentSelector').value = selectedTests[1];
+            
+            // Set the baseline as the older selected test
+            document.getElementById('baselineSelector').value = selectedTests[0];
+            
+            // Switch to compare tab and trigger comparison
+            document.getElementById('compare-tab').click();
+            compareTests();
+        }
+    });
+    
+    // Handle quick compare button
+    historyList.addEventListener('click', (e) => {
+        const quickCompareBtn = e.target.closest('.quick-compare-btn');
+        if (quickCompareBtn) {
+            const selectedIndex = parseInt(quickCompareBtn.getAttribute('data-test-index'));
+            
+            // Set the current test as the selected one
+            document.getElementById('currentSelector').value = selectedIndex;
+            
+            // Set the baseline as the next most recent test or the oldest if this is the oldest
+            const baselineIndex = selectedIndex === allTests.length - 1 ? 0 : selectedIndex + 1;
+            document.getElementById('baselineSelector').value = baselineIndex;
+            
+            // Switch to compare tab and trigger comparison
+            document.getElementById('compare-tab').click();
+            compareTests();
+        }
+    });
+    
+    // Handle view test button
+    historyList.addEventListener('click', (e) => {
+        const viewBtn = e.target.closest('.view-btn');
+        if (viewBtn) {
+            const testIndex = parseInt(viewBtn.getAttribute('data-test-index'));
+            const test = allTests[testIndex];
+            
+            // Show test details in a modal or new view
+            showTestDetails(test);
+        }
+    });
+
+    // Handle tab switching
+    const viewTabs = document.getElementById('viewTabs');
+    if (viewTabs) {
+        viewTabs.addEventListener('shown.bs.tab', (e) => {
+            if (e.target.id === 'history-tab') {
+                // Refresh history list when switching to history tab
+                populateHistoryList();
+                
+                // Reset selected tests
+                selectedTests = [];
+                updateSelectedDisplay();
+                updateCompareBtn();
+            }
+        });
+    }
+}
+
+/**
+ * Shows detailed information for a single test
+ */
+function showTestDetails(test) {
+    // Create modal for test details if it doesn't exist
+    let modal = document.getElementById('testDetailsModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'testDetailsModal';
+        modal.tabIndex = '-1';
+        modal.setAttribute('aria-labelledby', 'testDetailsModalLabel');
+        modal.setAttribute('aria-hidden', 'true');
+        
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="testDetailsModalLabel">Test Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="testDetailsContent"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    // Populate test details
+    const content = document.getElementById('testDetailsContent');
+    const date = formatDate(test.date);
+    
+    content.innerHTML = `
+        <h4>${date} ${test.isCurrent ? '(Current)' : ''}</h4>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">Performance Metrics</div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>Total Samples</th>
+                                <td>${test.samples}</td>
+                            </tr>
+                            <tr>
+                                <th>Failed Samples</th>
+                                <td>${test.fail}</td>
+                            </tr>
+                            <tr>
+                                <th>Error Rate</th>
+                                <td>${test.errorPct}%</td>
+                            </tr>
+                            <tr>
+                                <th>Throughput</th>
+                                <td>${test.throughput.toFixed(2)} req/sec</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">Response Times</div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>Average</th>
+                                <td>${test.avgResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>Median</th>
+                                <td>${test.medianResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>90% Percentile</th>
+                                <td>${test.pct90ResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>95% Percentile</th>
+                                <td>${test.pct95ResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>99% Percentile</th>
+                                <td>${test.pct99ResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>Min</th>
+                                <td>${test.minResponseTime} ms</td>
+                            </tr>
+                            <tr>
+                                <th>Max</th>
+                                <td>${test.maxResponseTime} ms</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">Network</div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <tr>
+                                <th>KB Received/sec</th>
+                                <td>${test.kbReceived.toFixed(2)} KB/sec</td>
+                            </tr>
+                            <tr>
+                                <th>KB Sent/sec</th>
+                                <td>${test.kbSent.toFixed(2)} KB/sec</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Show the modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
 }
 
 /**
@@ -637,4 +974,76 @@ function calculatePercentChange(baseValue, currentValue) {
         return currentValue === 0 ? 0 : 100;
     }
     return ((currentValue - baseValue) / Math.abs(baseValue)) * 100;
+}
+
+/**
+ * Setup Bootstrap tab navigation manually to ensure it works
+ */
+function setupTabNavigation() {
+    // Get all tab elements
+    const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    console.log(`Found ${tabs.length} tabs and ${tabPanes.length} tab panes`);
+    
+    // Create tab click handlers manually
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Deactivate all tabs
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            
+            // Hide all tab panes
+            tabPanes.forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            // Activate the clicked tab
+            tab.classList.add('active');
+            tab.setAttribute('aria-selected', 'true');
+            
+            // Show the corresponding tab pane
+            const targetId = tab.getAttribute('data-bs-target');
+            const targetPane = document.querySelector(targetId);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+                
+                // If this is the history tab, refresh the history list
+                if (tab.id === 'history-tab') {
+                    console.log("Showing history tab, refreshing history list");
+                    populateHistoryList();
+                }
+            }
+            
+            console.log(`Switched to tab: ${tab.id}, target: ${targetId}`);
+        });
+    });
+
+    // Add a button to directly access history for debugging
+    const container = document.querySelector('.container');
+    if (container) {
+        const debugButton = document.createElement('div');
+        debugButton.className = 'mt-3 mb-3';
+        debugButton.innerHTML = `
+            <button id="showHistoryBtn" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history"></i> Direct Access to History Tab
+            </button>
+        `;
+        container.insertBefore(debugButton, container.firstChild);
+        
+        // Add event listener to this button
+        document.getElementById('showHistoryBtn').addEventListener('click', () => {
+            console.log("Showing history tab via direct access button");
+            const historyTab = document.getElementById('history-tab');
+            if (historyTab) {
+                historyTab.click();
+            } else {
+                console.error("History tab element not found");
+            }
+        });
+    }
 } 

@@ -1,0 +1,23 @@
+{
+    "tests": [
+        {
+            "id": "2024_03_20_10_00_00",
+            "date": "2024_03_20_10_00_00",
+            "samples": 1000,
+            "fail": 10,
+            "errorPct": 1.0,
+            "avgResponseTime": 250,
+            "minResponseTime": 50,
+            "maxResponseTime": 1200,
+            "medianResponseTime": 200,
+            "pct90ResponseTime": 400,
+            "pct95ResponseTime": 500,
+            "pct99ResponseTime": 700,
+            "throughput": 20.5,
+            "kbReceived": 150.2,
+            "kbSent": 85.3,
+            "isCurrent": true
+        }
+    ],
+    "lastUpdated": "2024-03-20T10:00:00Z"
+} 

@@ -91,22 +91,16 @@ jobs:
       - name: Make scripts executable
         run: |
           chmod +x ./scripts/generate_history.sh
-          chmod +x ./scripts/generate_comparison_page.sh
           chmod +x ./scripts/run_comparison.sh
           chmod +x ./scripts/launch_comparison_viewer.sh
 
-      # ✅ Generate historical comparison
-      - name: Generate Historical Comparison
+      # ✅ Run comparison setup (history data generation + comparison tool)
+      - name: Set up Comparison Tool
         run: |
           # Ensure history directory exists and has proper permissions
           mkdir -p ./jmeter-pages/history
           chmod -R 755 ./jmeter-pages/history
           ./scripts/run_comparison.sh ./jmeter-tests/results/results.jtl
-
-      # ✅ Set up comparison viewer
-      - name: Set up Comparison Viewer
-        run: |
-          ./scripts/launch_comparison_viewer.sh
 
       # ✅ Display Test Summary
       - name: Display Test Summary
@@ -164,7 +158,7 @@ jobs:
           mkdir -p ./public/reports
           cp -r ./jmeter-pages/reports/* ./public/reports/
           
-          # Copy history data to public/history
+          # Copy history data to public/history (needed for the comparison tool)
           mkdir -p ./public/history
           cp -r ./jmeter-pages/history/* ./public/history/
           

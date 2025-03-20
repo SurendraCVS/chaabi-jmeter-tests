@@ -1,144 +1,140 @@
 #!/bin/bash
 
-# Script to launch the JMeter Test Comparison Viewer
-# Usage: ./launch_comparison_viewer.sh
+# JMeter Comparison Viewer Launcher
+# This script launches the comparison viewer in a web browser
 
-set -e
+echo "================================="
+echo "JMeter Comparison Viewer Launcher"
+echo "================================="
 
-# Define directories
-SCRIPTS_DIR="$(dirname "$0")"
-BASE_DIR="$(dirname "$SCRIPTS_DIR")"
-REPORTS_DIR="$BASE_DIR/jmeter-pages/reports"
-HISTORY_DIR="$BASE_DIR/jmeter-pages/history"
-VIEWER_DIR="$REPORTS_DIR/comparison"
+# Get the directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
-echo "Setting up JMeter Test Comparison Viewer..."
-echo "Scripts directory: $SCRIPTS_DIR"
-echo "Base directory: $BASE_DIR"
-echo "Reports directory: $REPORTS_DIR"
-echo "History directory: $HISTORY_DIR"
-echo "Viewer directory: $VIEWER_DIR"
+# Check if history directory exists, create if not
+if [ ! -d "../reports/history" ]; then
+    echo "Creating history directory..."
+    mkdir -p "../reports/history"
+fi
 
-# Create the comparison viewer directory
-mkdir -p "$VIEWER_DIR"
-mkdir -p "$VIEWER_DIR/history"
-echo "Created comparison viewer directories"
-
-# Copy the comparison viewer files to the reports directory
-cp "$SCRIPTS_DIR/comparison_viewer.html" "$VIEWER_DIR/index.html"
-cp "$SCRIPTS_DIR/comparison_viewer.js" "$VIEWER_DIR/comparison_viewer.js"
-echo "Copied comparison viewer files"
-
-# Check all possible locations for history.json and copy it to the comparison viewer directory
-FOUND_HISTORY=false
-
-# Define all possible locations of history.json
-HISTORY_LOCATIONS=(
-  "$HISTORY_DIR/history.json"
-  "$REPORTS_DIR/history/history.json"
-  "$BASE_DIR/history/history.json"
-)
-
-for LOCATION in "${HISTORY_LOCATIONS[@]}"; do
-  if [ -f "$LOCATION" ]; then
-    echo "Found history.json at $LOCATION"
-    cp "$LOCATION" "$VIEWER_DIR/history/history.json"
-    FOUND_HISTORY=true
-    break
-  fi
-done
-
-# Create a minimal history file if none was found
-if [ "$FOUND_HISTORY" = false ]; then
-  echo "Warning: No history data found in any known location"
-  echo "Creating a sample history file with current date for demonstration"
-  
-  # Get current date in the format expected by the history.json
-  CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-  
-  # Create a sample history.json with one test
-  cat > "$VIEWER_DIR/history/history.json" << EOF
+# Check if history.json exists, create a sample file if not
+if [ ! -f "../reports/history/history.json" ]; then
+    echo "Creating sample history.json file..."
+    cat > "../reports/history/history.json" << EOF
 {
-  "tests": [
-    {
-      "id": "$CURRENT_DATE",
-      "date": "$CURRENT_DATE",
-      "samples": 1000,
-      "fail": 10,
-      "errorPct": 1.0,
-      "avgResponseTime": 250,
-      "minResponseTime": 50,
-      "maxResponseTime": 1200,
-      "medianResponseTime": 200,
-      "pct90ResponseTime": 400,
-      "pct95ResponseTime": 500,
-      "pct99ResponseTime": 700,
-      "throughput": 20.5,
-      "kbReceived": 150.2,
-      "kbSent": 85.3,
-      "isCurrent": true
-    }
-  ]
+    "tests": [
+        {
+            "id": "2024_03_20_10_00_00",
+            "date": "2024_03_20_10_00_00",
+            "samples": 1000,
+            "fail": 10,
+            "errorPct": 1.0,
+            "avgResponseTime": 250,
+            "minResponseTime": 50,
+            "maxResponseTime": 1200,
+            "medianResponseTime": 200,
+            "pct90ResponseTime": 400,
+            "pct95ResponseTime": 500,
+            "pct99ResponseTime": 700,
+            "throughput": 20.5,
+            "kbReceived": 150.2,
+            "kbSent": 85.3,
+            "isCurrent": true
+        },
+        {
+            "id": "2024_03_19_10_00_00",
+            "date": "2024_03_19_10_00_00",
+            "samples": 950,
+            "fail": 15,
+            "errorPct": 1.58,
+            "avgResponseTime": 300,
+            "minResponseTime": 60,
+            "maxResponseTime": 1500,
+            "medianResponseTime": 240,
+            "pct90ResponseTime": 450,
+            "pct95ResponseTime": 600,
+            "pct99ResponseTime": 900,
+            "throughput": 18.2,
+            "kbReceived": 140.5,
+            "kbSent": 80.1,
+            "isCurrent": false
+        }
+    ],
+    "lastUpdated": "2024-03-20T10:00:00Z"
 }
 EOF
+    echo "Sample history.json file created."
 fi
 
-echo "History file details:"
-ls -la "$VIEWER_DIR/history/history.json" || echo "File not found"
-cat "$VIEWER_DIR/history/history.json" | head -20 || echo "Cannot display file contents"
-
-# Add a link to the comparison viewer in the main report
-if [ -f "$REPORTS_DIR/index.html" ]; then
-    # Check if the link already exists
-    if ! grep -q "View Comparison Tool" "$REPORTS_DIR/index.html"; then
-        echo "Adding link to main report"
-        # Create a temporary file
-        TEMP_FILE=$(mktemp)
-        
-        # Insert link after the <body> tag or after existing historical comparison link
-        if grep -q "View Historical Comparison" "$REPORTS_DIR/index.html"; then
-            # Add after the existing link div
-            awk '/<div style="text-align: center; margin: 20px;"><a href="history\/"/ {
-                print $0;
-                print "    <a href=\"comparison/\" style=\"display: inline-block; margin-left: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Comparison Tool</a>";
-                next;
-            }
-            { print $0 }' "$REPORTS_DIR/index.html" > "$TEMP_FILE"
-        else
-            # Add after body tag
-            awk '/<body>/ {
-                print $0;
-                print "<div style=\"text-align: center; margin: 20px;\">";
-                print "    <a href=\"comparison/\" style=\"display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Comparison Tool</a>";
-                print "</div>";
-                next;
-            }
-            { print $0 }' "$REPORTS_DIR/index.html" > "$TEMP_FILE"
-        fi
-        
-        # Replace the original file with the modified one
-        mv "$TEMP_FILE" "$REPORTS_DIR/index.html"
-        echo "Added link to comparison tool in the main report"
-    else
-        echo "Link to comparison tool already exists in the main report"
-    fi
+# Debug information
+echo "Checking history.json..."
+if [ -f "../reports/history/history.json" ]; then
+    echo "✅ history.json exists at: $(realpath "../reports/history/history.json")"
+    echo "Contents:"
+    cat "../reports/history/history.json" | head -20
+    echo "..."
 else
-    echo "Warning: Main report index.html not found at $REPORTS_DIR/index.html"
+    echo "❌ history.json not found!"
 fi
 
-# Display success message
-echo "Comparison viewer has been set up successfully!"
-echo "You can access it at: $VIEWER_DIR/index.html"
-
-# Try to open the viewer in a browser if possible
-if command -v xdg-open >/dev/null 2>&1; then
-    echo "Opening comparison viewer in your default browser..."
-    xdg-open "file://$VIEWER_DIR/index.html" >/dev/null 2>&1 || echo "Could not open browser automatically."
-elif command -v open >/dev/null 2>&1; then
-    echo "Opening comparison viewer in your default browser..."
-    open "file://$VIEWER_DIR/index.html" >/dev/null 2>&1 || echo "Could not open browser automatically."
+echo ""
+echo "Checking comparison_viewer.html..."
+if [ -f "comparison_viewer.html" ]; then
+    echo "✅ comparison_viewer.html exists at: $(realpath "comparison_viewer.html")"
 else
-    echo "To view the comparison tool, open $VIEWER_DIR/index.html in your browser."
+    echo "❌ comparison_viewer.html not found!"
 fi
 
-echo "Comparison tool setup complete!" 
+echo ""
+echo "Checking comparison_viewer.js..."
+if [ -f "comparison_viewer.js" ]; then
+    echo "✅ comparison_viewer.js exists at: $(realpath "comparison_viewer.js")"
+else
+    echo "❌ comparison_viewer.js not found!"
+fi
+
+# Start a simple HTTP server
+echo ""
+echo "Starting HTTP server..."
+
+# Check if Python is available
+if command -v python3 &>/dev/null; then
+    echo "Using Python 3 HTTP server"
+    python3 -m http.server 8000 &
+    SERVER_PID=$!
+elif command -v python &>/dev/null; then
+    echo "Using Python HTTP server"
+    python -m SimpleHTTPServer 8000 &
+    SERVER_PID=$!
+else
+    echo "❌ Python not found. Cannot start HTTP server."
+    exit 1
+fi
+
+echo "HTTP server started on port 8000 (PID: $SERVER_PID)"
+
+# Open the browser
+echo ""
+echo "Opening comparison viewer in browser..."
+
+# Determine the correct command to open a browser
+if command -v xdg-open &>/dev/null; then
+    # Linux
+    xdg-open http://localhost:8000/comparison_viewer.html
+elif command -v open &>/dev/null; then
+    # macOS
+    open http://localhost:8000/comparison_viewer.html
+elif command -v start &>/dev/null; then
+    # Windows
+    start http://localhost:8000/comparison_viewer.html
+else
+    echo "❌ Could not detect a way to open a browser. Please manually visit:"
+    echo "   http://localhost:8000/comparison_viewer.html"
+fi
+
+echo ""
+echo "Press Ctrl+C to stop the server when done"
+
+# Wait for Ctrl+C
+trap "kill $SERVER_PID; echo 'Server stopped.'; exit" INT
+wait $SERVER_PID 

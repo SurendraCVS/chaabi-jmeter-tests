@@ -27,11 +27,7 @@ if [ ! -x "$(command -v ./scripts/generate_history.sh)" ]; then
   chmod +x ./scripts/generate_history.sh
 fi
 
-if [ ! -x "$(command -v ./scripts/generate_comparison_page.sh)" ]; then
-  chmod +x ./scripts/generate_comparison_page.sh
-fi
-
-# Step 1: Generate historical data
+# Step 1: Generate historical data (still needed for comparison tool)
 echo "Step 1: Generating historical data..."
 ./scripts/generate_history.sh "$RESULTS_FILE" "$HISTORY_DIR" "$OUTPUT_DIR"
 
@@ -39,28 +35,25 @@ echo "Step 1: Generating historical data..."
 echo "Copying history.json to comparison directory..."
 cp "$OUTPUT_DIR/history.json" "$COMPARISON_DIR/history/history.json"
 
-# Step 2: Generate comparison HTML page
-echo "Step 2: Generating comparison HTML page..."
-./scripts/generate_comparison_page.sh "$OUTPUT_DIR"
-
-# Step 3: Add link to main JMeter report
-echo "Step 3: Adding link to main JMeter report..."
+# Add link to comparison tool in the main JMeter report
+echo "Adding link to comparison tool in the main report..."
 if [ -f "./jmeter-pages/reports/index.html" ]; then
   # Create a temporary file
   TEMP_FILE=$(mktemp)
   
-  # Insert link after the <body> tag
+  # Insert link after the <body> tag - only for the comparison tool, not historical comparison
   awk '/<body>/ {
     print $0;
-    print "<div style=\"text-align: center; margin: 20px;\"><a href=\"history/\" style=\"display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Historical Comparison</a>";
-    print "<a href=\"comparison/\" style=\"display: inline-block; margin-left: 10px; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Comparison Tool</a></div>";
+    print "<div style=\"text-align: center; margin: 20px;\">";
+    print "  <a href=\"comparison/\" style=\"display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;\">View Comparison Tool</a>";
+    print "</div>";
     next;
   }
   { print $0 }' "./jmeter-pages/reports/index.html" > "$TEMP_FILE"
   
   # Replace the original file with the modified one
   mv "$TEMP_FILE" "./jmeter-pages/reports/index.html"
-  echo "Added links to historical comparison and comparison tool in the main report"
+  echo "Added link to comparison tool in the main report"
 else
   echo "Warning: index.html not found in reports directory"
 fi
@@ -83,6 +76,5 @@ else
   echo "Warning: history.json not found in $COMPARISON_DIR/history"
 fi
 
-echo "Historical comparison setup complete!"
-echo "You can view the comparison at: ./jmeter-pages/reports/history/index.html" 
+echo "Comparison setup complete!"
 echo "You can view the comparison tool at: ./jmeter-pages/reports/comparison/index.html" 
