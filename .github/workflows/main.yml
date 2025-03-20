@@ -3,48 +3,9 @@ name: JMeter Test Workflow
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - 'reports/**'  # Run when reports are updated
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  update-history:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # This ensures we get the full history for commits
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq  # Install jq for JSON processing
-      
-      - name: Update history file
-        run: |
-          chmod +x scripts/update_history.sh
-          scripts/update_history.sh
-      
-      - name: Copy history files to key locations
-        run: |
-          mkdir -p reports/history
-          mkdir -p scripts/history
-          mkdir -p history
-          
-          # Copy the updated history file to all locations
-          cp scripts/history/history.json reports/history/history.json || true
-          cp scripts/history/history.json history/history.json || true
-      
-      - name: Commit and push changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'history/*.json reports/history/*.json scripts/history/*.json'
-          message: 'Update test history [skip ci]'
-          default_author: github_actions
-
-  # ✅ JMeter Tests
   jmeter-tests:
     runs-on: ubuntu-latest
 
@@ -52,6 +13,8 @@ jobs:
       # ✅ Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # This ensures we get the full history for commits
 
       # ✅ Install JMeter
       - name: Install JMeter
@@ -62,6 +25,12 @@ jobs:
           tar -xvzf apache-jmeter-5.6.2.tgz
           echo "JMETER_HOME=$(pwd)/apache-jmeter-5.6.2" >> $GITHUB_ENV
           echo "$(pwd)/apache-jmeter-5.6.2/bin" >> $GITHUB_PATH
+
+      # ✅ Install dependencies for history update
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq  # Install jq for JSON processing
 
       # ✅ Reload environment variables
       - name: Load environment variables
@@ -93,6 +62,7 @@ jobs:
           mkdir -p ./jmeter-tests/results
           mkdir -p ./jmeter-pages/history
           chmod -R 755 ./jmeter-pages
+          mkdir -p ./reports/$(date +"%Y-%m-%d_%H-%M-%S")
 
       # ✅ Download previous results if they exist
       - name: Download previous results
@@ -121,13 +91,55 @@ jobs:
             -l ./jmeter-tests/results/results.jtl \
             -e -o ./jmeter-pages/reports \
             -Jthreads=100 -Jrampup=10 -Jduration=60 -f
+          
+          # Copy results to reports directory for history tracking
+          TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+          mkdir -p ./reports/$TIMESTAMP/JMeterTest
+          cp ./jmeter-tests/results/results.jtl ./reports/$TIMESTAMP/
+          
+          # Create statistics.json file
+          echo "{" > ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "  \"Total\": {" >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "    \"transaction\": \"Total\"," >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "    \"sampleCount\": $(grep -c "" ./jmeter-tests/results/results.jtl)," >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "    \"errorCount\": $(grep -c ",false," ./jmeter-tests/results/results.jtl)," >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          ERROR_COUNT=$(grep -c ",false," ./jmeter-tests/results/results.jtl)
+          SAMPLE_COUNT=$(grep -c "" ./jmeter-tests/results/results.jtl)
+          ERROR_PCT=$(awk "BEGIN {print ($ERROR_COUNT/$SAMPLE_COUNT)*100}")
+          echo "    \"errorPct\": $ERROR_PCT," >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          MEAN_TIME=$(awk -F "," '{sum+=$1} END {print sum/NR}' ./jmeter-tests/results/results.jtl)
+          echo "    \"meanResTime\": $MEAN_TIME" >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "  }" >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
+          echo "}" >> ./reports/$TIMESTAMP/JMeterTest/statistics.json
 
       # ✅ Make scripts executable
       - name: Make scripts executable
         run: |
-          chmod +x ./scripts/generate_history.sh
-          chmod +x ./scripts/run_comparison.sh
-          chmod +x ./scripts/launch_comparison_viewer.sh
+          chmod +x ./scripts/generate_history.sh || true
+          chmod +x ./scripts/run_comparison.sh || true
+          chmod +x ./scripts/launch_comparison_viewer.sh || true
+          chmod +x ./scripts/update_history.sh || true
+
+      # ✅ Update history file
+      - name: Update history file
+        run: |
+          if [ -f "./scripts/update_history.sh" ]; then
+            ./scripts/update_history.sh
+          else
+            echo "Warning: update_history.sh script not found"
+          fi
+
+      # ✅ Copy history files to key locations
+      - name: Copy history files to key locations
+        run: |
+          mkdir -p reports/history
+          mkdir -p scripts/history
+          mkdir -p history
+          
+          # Copy files if they exist
+          [ -f "scripts/history/history.json" ] && cp scripts/history/history.json reports/history/history.json || true
+          [ -f "scripts/history/history.json" ] && cp scripts/history/history.json history/history.json || true
+          [ -f "scripts/history/history.json" ] && cp scripts/history/history.json ./jmeter-pages/history/history.json || true
 
       # ✅ Run comparison setup (history data generation + comparison tool)
       - name: Set up Comparison Tool
@@ -135,7 +147,7 @@ jobs:
           # Ensure history directory exists and has proper permissions
           mkdir -p ./jmeter-pages/history
           chmod -R 755 ./jmeter-pages/history
-          ./scripts/run_comparison.sh ./jmeter-tests/results/results.jtl
+          ./scripts/run_comparison.sh ./jmeter-tests/results/results.jtl || true
 
       # ✅ Display Test Summary
       - name: Display Test Summary
@@ -156,8 +168,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: JMeter-History
-          path: ./jmeter-pages/history
+          path: |
+            ./jmeter-pages/history
+            ./scripts/history
+            ./reports/history
           retention-days: 30  # Keep artifacts for 30 days
+
+      # ✅ Commit and push changes
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'history/*.json reports/history/*.json scripts/history/*.json reports/'
+          message: 'Update test history [skip ci]'
+          default_author: github_actions
 
   # ✅ GitHub Pages Deployment
   deploy:
@@ -197,6 +220,9 @@ jobs:
           mkdir -p ./public/history
           cp -r ./jmeter-pages/history/* ./public/history/
           
+          # Copy history dashboard if it exists
+          [ -f "./reports/history/index.html" ] && cp ./reports/history/index.html ./public/history/ || true
+          
           # Create index.html that redirects to reports
           cat > ./public/index.html << 'EOL'
           <!DOCTYPE html>
@@ -208,6 +234,7 @@ jobs:
             </head>
             <body>
               <p>If you are not redirected automatically, follow this <a href="reports/">link to the reports</a>.</p>
+              <p>View the <a href="history/">history dashboard</a>.</p>
             </body>
           </html>
           EOL
