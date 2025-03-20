@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMeter Test History Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .dashboard-title {
+            margin-bottom: 30px;
+            color: #212529;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        .success-rate-badge {
+            font-size: 1.2em;
+            padding: 8px 12px;
+        }
+        .response-time-badge {
+            font-size: 1.2em;
+            padding: 8px 12px;
+        }
+        .stats-table th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 10;
+        }
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="dashboard-title">JMeter Test History Dashboard</h1>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Success Rate Over Time</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="successRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Response Time Over Time</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="responseTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">Latest Test Summary</div>
+                    <div class="card-body">
+                        <div id="latestTestSummary" class="row">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">Test History</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Test Name</th>
+                                        <th>Success Rate</th>
+                                        <th>Avg Response Time (ms)</th>
+                                        <th>Report</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch and process history data
+        async function loadHistoryData() {
+            try {
+                const response = await fetch('history.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch history data: ${response.statusText}`);
+                }
+                const data = await response.json();
+                return data.tests || [];
+            } catch (error) {
+                console.error('Error loading history data:', error);
+                document.body.innerHTML = `
+                    <div class="container mt-5">
+                        <div class="alert alert-danger">
+                            <h4>Error Loading Data</h4>
+                            <p>${error.message}</p>
+                            <p>Please make sure the history.json file exists and is properly formatted.</p>
+                        </div>
+                    </div>
+                `;
+                return [];
+            }
+        }
+
+        // Group tests by name for chart display
+        function groupTestsByName(tests) {
+            const testGroups = {};
+            
+            tests.forEach(test => {
+                if (!testGroups[test.test]) {
+                    testGroups[test.test] = [];
+                }
+                testGroups[test.test].push(test);
+            });
+            
+            // Sort each group by timestamp
+            Object.keys(testGroups).forEach(testName => {
+                testGroups[testName].sort((a, b) => {
+                    return new Date(a.timestamp.replace(/_/g, ' ')) - new Date(b.timestamp.replace(/_/g, ' '));
+                });
+            });
+            
+            return testGroups;
+        }
+
+        // Format timestamp for display
+        function formatTimestamp(timestamp) {
+            return timestamp.replace(/_/g, ' ').replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2})-(\d{2})-(\d{2})/, '$1-$2-$3 $4:$5:$6');
+        }
+
+        // Get badge color based on success rate
+        function getSuccessRateBadgeColor(rate) {
+            if (rate >= 98) return 'bg-success';
+            if (rate >= 90) return 'bg-warning';
+            return 'bg-danger';
+        }
+
+        // Get badge color based on response time
+        function getResponseTimeBadgeColor(time) {
+            if (time <= 300) return 'bg-success';
+            if (time <= 1000) return 'bg-warning';
+            return 'bg-danger';
+        }
+
+        // Render charts
+        function renderCharts(testGroups) {
+            const colors = [
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 159, 64, 0.7)',
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(255, 205, 86, 0.7)'
+            ];
+            
+            // Success Rate Chart
+            const successRateCtx = document.getElementById('successRateChart').getContext('2d');
+            const successRateData = {
+                labels: [],
+                datasets: []
+            };
+            
+            // Response Time Chart
+            const responseTimeCtx = document.getElementById('responseTimeChart').getContext('2d');
+            const responseTimeData = {
+                labels: [],
+                datasets: []
+            };
+            
+            // Prepare data for charts
+            let colorIndex = 0;
+            Object.keys(testGroups).forEach(testName => {
+                const tests = testGroups[testName];
+                const color = colors[colorIndex % colors.length];
+                colorIndex++;
+                
+                // Dataset for success rate
+                const successRateDataset = {
+                    label: testName,
+                    backgroundColor: color,
+                    borderColor: color.replace('0.7', '1'),
+                    data: tests.map(test => test.success_rate),
+                    tension: 0.3,
+                    pointRadius: 4
+                };
+                
+                // Dataset for response time
+                const responseTimeDataset = {
+                    label: testName,
+                    backgroundColor: color,
+                    borderColor: color.replace('0.7', '1'),
+                    data: tests.map(test => test.avg_response_time),
+                    tension: 0.3,
+                    pointRadius: 4
+                };
+                
+                successRateData.datasets.push(successRateDataset);
+                responseTimeData.datasets.push(responseTimeDataset);
+                
+                // Add all timestamps to labels if not already there
+                tests.forEach(test => {
+                    const formattedTimestamp = formatTimestamp(test.timestamp);
+                    if (!successRateData.labels.includes(formattedTimestamp)) {
+                        successRateData.labels.push(formattedTimestamp);
+                    }
+                });
+            });
+            
+            // Copy labels to response time chart
+            responseTimeData.labels = [...successRateData.labels];
+            
+            // Create the charts
+            new Chart(successRateCtx, {
+                type: 'line',
+                data: successRateData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.max(0, Math.min(...successRateData.datasets.flatMap(d => d.data)) - 5),
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Success Rate (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            new Chart(responseTimeCtx, {
+                type: 'line',
+                data: responseTimeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Response Time (ms)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate the history table
+        function populateHistoryTable(tests) {
+            const tableBody = document.getElementById('historyTableBody');
+            tableBody.innerHTML = '';
+            
+            tests.forEach(test => {
+                const row = document.createElement('tr');
+                
+                // Format timestamp
+                const formattedTimestamp = formatTimestamp(test.timestamp);
+                
+                // Create table cells
+                row.innerHTML = `
+                    <td>${formattedTimestamp}</td>
+                    <td>${test.test}</td>
+                    <td><span class="badge ${getSuccessRateBadgeColor(test.success_rate)}">${test.success_rate.toFixed(2)}%</span></td>
+                    <td><span class="badge ${getResponseTimeBadgeColor(test.avg_response_time)}">${test.avg_response_time.toFixed(0)} ms</span></td>
+                    <td><a href="../${test.report_path.split('/').pop()}" class="btn btn-sm btn-primary" target="_blank">View Report</a></td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Display latest test summary
+        function displayLatestTestSummary(tests) {
+            const container = document.getElementById('latestTestSummary');
+            container.innerHTML = '';
+            
+            // Group by test name to get latest for each test
+            const testGroups = groupTestsByName(tests);
+            const latestTests = Object.values(testGroups).map(group => group[group.length - 1]);
+            
+            latestTests.forEach(test => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4 mb-3';
+                
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-header bg-light">${test.test}</div>
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <span class="badge success-rate-badge ${getSuccessRateBadgeColor(test.success_rate)}">
+                                    ${test.success_rate.toFixed(2)}% Success Rate
+                                </span>
+                            </div>
+                            <div>
+                                <span class="badge response-time-badge ${getResponseTimeBadgeColor(test.avg_response_time)}">
+                                    ${test.avg_response_time.toFixed(0)} ms Avg Response
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted">
+                            ${formatTimestamp(test.timestamp)}
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(col);
+            });
+        }
+
+        // Initialize the dashboard
+        async function initDashboard() {
+            const tests = await loadHistoryData();
+            
+            if (tests.length === 0) {
+                document.body.innerHTML += `
+                    <div class="container mt-5">
+                        <div class="alert alert-info">
+                            <h4>No Test Data Found</h4>
+                            <p>Run some JMeter tests and make sure the update_history.sh script has processed them.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const testGroups = groupTestsByName(tests);
+            
+            renderCharts(testGroups);
+            populateHistoryTable(tests);
+            displayLatestTestSummary(tests);
+        }
+
+        // Start the application
+        window.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html> 
