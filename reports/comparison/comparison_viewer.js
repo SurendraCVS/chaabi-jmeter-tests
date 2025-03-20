@@ -16,10 +16,31 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
     try {
-        // Fetch the historical data from history.json
-        const response = await fetch('../reports/history/history.json');
-        if (!response.ok) {
-            throw new Error('Failed to fetch history data');
+        // Try multiple possible paths to find history.json
+        let response;
+        let historyPaths = [
+            '../reports/history/history.json',
+            '../../history/history.json',
+            '../history/history.json',
+            './history/history.json'
+        ];
+        
+        // Try each path until one works
+        for (const path of historyPaths) {
+            try {
+                response = await fetch(path);
+                if (response.ok) {
+                    console.log(`Found history.json at: ${path}`);
+                    break;
+                }
+            } catch (e) {
+                console.log(`Path ${path} failed: ${e.message}`);
+                // Continue to next path
+            }
+        }
+        
+        if (!response || !response.ok) {
+            throw new Error('Failed to fetch history data from any known location');
         }
         
         const data = await response.json();
@@ -31,6 +52,11 @@ async function init() {
             return new Date(b.date.replace(/_/g, ' ').replace(/-/g, ':')) - 
                    new Date(a.date.replace(/_/g, ' ').replace(/-/g, ':'));
         });
+        
+        // Check if we have tests to display
+        if (allTests.length === 0) {
+            throw new Error('No test history data available');
+        }
         
         // Populate test selectors
         populateTestSelectors();
@@ -45,7 +71,13 @@ async function init() {
                 <div class="alert alert-danger mt-5">
                     <h4>Error Loading Data</h4>
                     <p>${error.message}</p>
-                    <p>Make sure test history data is available at '../reports/history/history.json'</p>
+                    <p>This might happen if:</p>
+                    <ul>
+                        <li>No tests have been run yet</li>
+                        <li>The history.json file is not in the expected location</li>
+                        <li>There was an error processing the history data</li>
+                    </ul>
+                    <p>Please run a test first to generate historical data.</p>
                 </div>
             </div>
         `;
