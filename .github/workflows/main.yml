@@ -61,7 +61,11 @@ jobs:
       # ✅ Inject Base URL in JMeter Report
       - name: Inject Base URL
         run: |
-          sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/jmeter-pages/reports/">#g' ./jmeter-pages/reports/index.html
+          # Insert base URL tag to fix navigation links
+          sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/">#g' ./jmeter-pages/reports/index.html
+          
+          # Add a custom navigation section with links to our dashboards
+          sed -i 's#</body>#<div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;"><h3>Performance Test History</h3><ul><li><a href="/chaabi-jmeter-tests/dashboard/index.html">View Test History Dashboard</a></li><li><a href="/chaabi-jmeter-tests/dashboard/trend_chart.html">View Performance Trends</a></li><li><a href="/chaabi-jmeter-tests/historical-reports/index.html">View Previous Test Run</a></li></ul></div></body>#g' ./jmeter-pages/reports/index.html
 
       # ✅ Display Test Summary
       - name: Display Test Summary
@@ -108,52 +112,70 @@ jobs:
   deploy:
     needs: jmeter-tests
     runs-on: ubuntu-latest
+    # Set permissions for GitHub Pages
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    # Environment for GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
+      # ✅ Configure GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # ✅ Create artifact directories
+      - name: Create working directory
+        run: mkdir -p ./working-dir
+
       # ✅ Checkout repository with history
       - name: Checkout repository with history
         uses: actions/checkout@v4
         with:
-          ref: gh-pages
+          path: ./working-dir/repo
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
+
       # ✅ Create history directories if they don't exist
       - name: Create directories
         run: |
-          mkdir -p ./history
-          mkdir -p ./dashboard
-          mkdir -p ./current
-          mkdir -p ./historical-reports
+          mkdir -p ./working-dir/deploy
+          mkdir -p ./working-dir/deploy/history
+          mkdir -p ./working-dir/deploy/dashboard
+          mkdir -p ./working-dir/deploy/current
+          mkdir -p ./working-dir/deploy/historical-reports
 
       # ✅ Download historical reports artifact
       - name: Download historical reports artifact
         uses: actions/download-artifact@v4
         with:
           name: JMeter-Historical-Reports
-          path: ./downloaded-history
+          path: ./working-dir/deploy/downloaded-history
 
       # ✅ Download current reports artifact
       - name: Download current reports artifact
         uses: actions/download-artifact@v4
         with:
           name: JMeter-Reports
-          path: ./current
+          path: ./working-dir/deploy/current
 
       # ✅ Extract and organize the latest report for direct viewing
       - name: Extract latest historical report
         run: |
           # Move all history archives to the history directory
-          mv ./downloaded-history/* ./history/ 2>/dev/null || true
+          mv ./working-dir/deploy/downloaded-history/* ./working-dir/deploy/history/ 2>/dev/null || true
           
           # Find the most recent report archive
-          LATEST_ARCHIVE=$(ls -t ./history/*.tar.gz 2>/dev/null | head -1 || echo "")
+          LATEST_ARCHIVE=$(ls -t ./working-dir/deploy/history/*.tar.gz 2>/dev/null | head -1 || echo "")
           
           # Extract it for direct viewing if it exists
           if [ -n "$LATEST_ARCHIVE" ]; then
             echo "Extracting latest report for direct viewing: $LATEST_ARCHIVE"
-            mkdir -p ./historical-reports/latest
-            tar -xzf "$LATEST_ARCHIVE" -C ./historical-reports/
+            mkdir -p ./working-dir/deploy/historical-reports/latest
+            tar -xzf "$LATEST_ARCHIVE" -C ./working-dir/deploy/historical-reports/
             
             # Create a redirect for easier access
             # Extract the base name first to avoid nested quoting issues
@@ -161,17 +183,19 @@ jobs:
             
             # Create the HTML file with proper YAML indentation
             # Using echo statements instead of heredoc to avoid YAML parsing issues
-            echo '<!DOCTYPE html>' > ./historical-reports/index.html
-            echo '<html>' >> ./historical-reports/index.html
-            echo '<head>' >> ./historical-reports/index.html
-            echo "  <meta http-equiv=\"refresh\" content=\"0; url=./${BASENAME}/index.html\">" >> ./historical-reports/index.html
-            echo '  <title>Redirecting to Latest Report</title>' >> ./historical-reports/index.html
-            echo '</head>' >> ./historical-reports/index.html
-            echo '<body>' >> ./historical-reports/index.html
-            echo '  <p>Redirecting to the latest historical report...</p>' >> ./historical-reports/index.html
-            echo "  <p>If you are not redirected automatically, <a href=\"./${BASENAME}/index.html\">click here</a>.</p>" >> ./historical-reports/index.html
-            echo '</body>' >> ./historical-reports/index.html
-            echo '</html>' >> ./historical-reports/index.html
+            echo '<!DOCTYPE html>' > ./working-dir/deploy/historical-reports/index.html
+            echo '<html>' >> ./working-dir/deploy/historical-reports/index.html
+            echo '<head>' >> ./working-dir/deploy/historical-reports/index.html
+            echo '  <meta charset="UTF-8">' >> ./working-dir/deploy/historical-reports/index.html
+            echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> ./working-dir/deploy/historical-reports/index.html
+            echo '  <title>Latest JMeter Historical Report</title>' >> ./working-dir/deploy/historical-reports/index.html
+            echo "  <meta http-equiv=\"refresh\" content=\"0;url=./${BASENAME}/index.html\">" >> ./working-dir/deploy/historical-reports/index.html
+            echo '</head>' >> ./working-dir/deploy/historical-reports/index.html
+            echo '<body>' >> ./working-dir/deploy/historical-reports/index.html
+            echo '  <p>Redirecting to the latest historical report...</p>' >> ./working-dir/deploy/historical-reports/index.html
+            echo "  <p>If you are not redirected automatically, <a href=\"/chaabi-jmeter-tests/historical-reports/${BASENAME}/index.html\">click here</a>.</p>" >> ./working-dir/deploy/historical-reports/index.html
+            echo '</body>' >> ./working-dir/deploy/historical-reports/index.html
+            echo '</html>' >> ./working-dir/deploy/historical-reports/index.html
           fi
 
       # ✅ Process and organize the history reports
@@ -180,186 +204,191 @@ jobs:
           TIMESTAMP="${{ needs.jmeter-tests.outputs.timestamp }}"
           
           # Generate report history index
-          echo "<!DOCTYPE html>" > ./dashboard/index.html
-          echo "<html lang='en'>" >> ./dashboard/index.html
-          echo "<head>" >> ./dashboard/index.html
-          echo "  <meta charset='UTF-8'>" >> ./dashboard/index.html
-          echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> ./dashboard/index.html
-          echo "  <title>JMeter Test History Dashboard</title>" >> ./dashboard/index.html
-          echo "  <style>" >> ./dashboard/index.html
-          echo "    body { font-family: Arial, sans-serif; margin: 20px; }" >> ./dashboard/index.html
-          echo "    table { border-collapse: collapse; width: 100%; }" >> ./dashboard/index.html
-          echo "    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }" >> ./dashboard/index.html
-          echo "    th { background-color: #f2f2f2; }" >> ./dashboard/index.html
-          echo "    tr:hover {background-color: #f5f5f5;}" >> ./dashboard/index.html
-          echo "    .current { background-color: #e6ffe6; }" >> ./dashboard/index.html
-          echo "    .nav-links { margin: 20px 0; padding: 10px; background-color: #f8f9fa; border-radius: 5px; }" >> ./dashboard/index.html
-          echo "    .nav-links a { margin-right: 20px; text-decoration: none; color: #0366d6; }" >> ./dashboard/index.html
-          echo "    .nav-links a:hover { text-decoration: underline; }" >> ./dashboard/index.html
-          echo "  </style>" >> ./dashboard/index.html
-          echo "</head>" >> ./dashboard/index.html
-          echo "<body>" >> ./dashboard/index.html
-          echo "  <h1>JMeter Test History Dashboard</h1>" >> ./dashboard/index.html
-          echo "  <p>Last updated: $(date)</p>" >> ./dashboard/index.html
-          echo "  <div class='nav-links'>" >> ./dashboard/index.html
-          echo "    <a href='../current/index.html'>Current Test Report</a>" >> ./dashboard/index.html
-          echo "    <a href='../historical-reports/index.html'>Latest Historical Report</a>" >> ./dashboard/index.html
-          echo "    <a href='trend_chart.html'>Performance Trend Chart</a>" >> ./dashboard/index.html
-          echo "  </div>" >> ./dashboard/index.html
-          echo "  <h2>Test Reports History</h2>" >> ./dashboard/index.html
-          echo "  <table>" >> ./dashboard/index.html
-          echo "    <tr>" >> ./dashboard/index.html
-          echo "      <th>Date & Time</th>" >> ./dashboard/index.html
-          echo "      <th>Commit ID</th>" >> ./dashboard/index.html
-          echo "      <th>Actions</th>" >> ./dashboard/index.html
-          echo "    </tr>" >> ./dashboard/index.html
+          echo "<!DOCTYPE html>" > ./working-dir/deploy/dashboard/index.html
+          echo "<html lang='en'>" >> ./working-dir/deploy/dashboard/index.html
+          echo "<head>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <meta charset='UTF-8'>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <title>JMeter Test History Dashboard</title>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <style>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    body { font-family: Arial, sans-serif; margin: 20px; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    table { border-collapse: collapse; width: 100%; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    th { background-color: #f2f2f2; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    tr:hover {background-color: #f5f5f5;}" >> ./working-dir/deploy/dashboard/index.html
+          echo "    .current { background-color: #e6ffe6; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    .nav-links { margin: 20px 0; padding: 10px; background-color: #f8f9fa; border-radius: 5px; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    .nav-links a { margin-right: 20px; text-decoration: none; color: #0366d6; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "    .nav-links a:hover { text-decoration: underline; }" >> ./working-dir/deploy/dashboard/index.html
+          echo "  </style>" >> ./working-dir/deploy/dashboard/index.html
+          echo "</head>" >> ./working-dir/deploy/dashboard/index.html
+          echo "<body>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <h1>JMeter Test History Dashboard</h1>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <p>Last updated: $(date)</p>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <div class='nav-links'>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <a href='/chaabi-jmeter-tests/current/index.html'>Current Test Report</a>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <a href='/chaabi-jmeter-tests/historical-reports/index.html'>Latest Historical Report</a>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <a href='/chaabi-jmeter-tests/dashboard/trend_chart.html'>Performance Trend Chart</a>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  </div>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <h2>Test Reports History</h2>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <table>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <tr>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <th>Date & Time</th>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <th>Commit ID</th>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <th>Actions</th>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    </tr>" >> ./working-dir/deploy/dashboard/index.html
           
           # List history reports (newest first)
-          ls -t ./history/*.tar.gz 2>/dev/null | while read report; do
+          ls -t ./working-dir/deploy/history/*.tar.gz 2>/dev/null | while read report; do
             filename=$(basename "$report" .tar.gz)
             timestamp=$(echo $filename | cut -d'_' -f2-3)
             commit=$(echo $filename | cut -d'_' -f4)
             
             # Store report on GitHub Pages
-            if [ -f "$report" ] && [ ! -d "./historical-reports/$filename" ]; then
-              mkdir -p "./historical-reports/$filename"
-              tar -xzf "$report" -C "./historical-reports/"
+            if [ -f "$report" ] && [ ! -d "./working-dir/deploy/historical-reports/$filename" ]; then
+              mkdir -p "./working-dir/deploy/historical-reports/$filename"
+              tar -xzf "$report" -C "./working-dir/deploy/historical-reports/"
+              
+              # Fix base URL in historical report
+              if [ -f "./working-dir/deploy/historical-reports/$filename/index.html" ]; then
+                sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/">#g' "./working-dir/deploy/historical-reports/$filename/index.html"
+              fi
             fi
             
             # Extract data for display
-            echo "    <tr>" >> ./dashboard/index.html
-            echo "      <td>$timestamp</td>" >> ./dashboard/index.html
-            echo "      <td>$commit</td>" >> ./dashboard/index.html
-            echo "      <td><a href='../historical-reports/$filename/index.html'>View Report</a></td>" >> ./dashboard/index.html
-            echo "    </tr>" >> ./dashboard/index.html
+            echo "    <tr>" >> ./working-dir/deploy/dashboard/index.html
+            echo "      <td>$timestamp</td>" >> ./working-dir/deploy/dashboard/index.html
+            echo "      <td>$commit</td>" >> ./working-dir/deploy/dashboard/index.html
+            echo "      <td><a href='/chaabi-jmeter-tests/historical-reports/$filename/index.html'>View Report</a></td>" >> ./working-dir/deploy/dashboard/index.html
+            echo "    </tr>" >> ./working-dir/deploy/dashboard/index.html
           done
           
-          echo "  </table>" >> ./dashboard/index.html
+          echo "  </table>" >> ./working-dir/deploy/dashboard/index.html
           
           # Add comparison tool
-          echo "  <h2>Compare Test Reports</h2>" >> ./dashboard/index.html
-          echo "  <div>" >> ./dashboard/index.html
-          echo "    <p>Select two reports to compare:</p>" >> ./dashboard/index.html
-          echo "    <form action='javascript:void(0);' onsubmit='compareReports()'>" >> ./dashboard/index.html
-          echo "      <label for='report1'>Report 1:</label>" >> ./dashboard/index.html
-          echo "      <select id='report1'>" >> ./dashboard/index.html
+          echo "  <h2>Compare Test Reports</h2>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  <div>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <p>Select two reports to compare:</p>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    <form action='javascript:void(0);' onsubmit='compareReports()'>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <label for='report1'>Report 1:</label>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <select id='report1'>" >> ./working-dir/deploy/dashboard/index.html
           
           # Add options for each report
-          ls -t ./history/*.tar.gz 2>/dev/null | while read report; do
+          ls -t ./working-dir/deploy/history/*.tar.gz 2>/dev/null | while read report; do
             filename=$(basename "$report" .tar.gz)
             timestamp=$(echo $filename | cut -d'_' -f2-3)
             commit=$(echo $filename | cut -d'_' -f4)
-            echo "        <option value='$filename'>$timestamp ($commit)</option>" >> ./dashboard/index.html
+            echo "        <option value='$filename'>$timestamp ($commit)</option>" >> ./working-dir/deploy/dashboard/index.html
           done
           
-          echo "      </select><br><br>" >> ./dashboard/index.html
-          echo "      <label for='report2'>Report 2:</label>" >> ./dashboard/index.html
-          echo "      <select id='report2'>" >> ./dashboard/index.html
+          echo "      </select><br><br>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <label for='report2'>Report 2:</label>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <select id='report2'>" >> ./working-dir/deploy/dashboard/index.html
           
           # Add options for each report again
-          ls -t ./history/*.tar.gz 2>/dev/null | while read report; do
+          ls -t ./working-dir/deploy/history/*.tar.gz 2>/dev/null | while read report; do
             filename=$(basename "$report" .tar.gz)
             timestamp=$(echo $filename | cut -d'_' -f2-3)
             commit=$(echo $filename | cut -d'_' -f4)
-            echo "        <option value='$filename'>$timestamp ($commit)</option>" >> ./dashboard/index.html
+            echo "        <option value='$filename'>$timestamp ($commit)</option>" >> ./working-dir/deploy/dashboard/index.html
           done
           
-          echo "      </select><br><br>" >> ./dashboard/index.html
-          echo "      <button type='submit'>Compare Reports</button>" >> ./dashboard/index.html
-          echo "    </form>" >> ./dashboard/index.html
-          echo "  </div>" >> ./dashboard/index.html
+          echo "      </select><br><br>" >> ./working-dir/deploy/dashboard/index.html
+          echo "      <button type='submit'>Compare Reports</button>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    </form>" >> ./working-dir/deploy/dashboard/index.html
+          echo "  </div>" >> ./working-dir/deploy/dashboard/index.html
           
           # Add JavaScript for the comparison functionality
-          echo "  <script>" >> ./dashboard/index.html
-          echo "    function compareReports() {" >> ./dashboard/index.html
-          echo "      const report1 = document.getElementById('report1').value;" >> ./dashboard/index.html
-          echo "      const report2 = document.getElementById('report2').value;" >> ./dashboard/index.html
-          echo "      " >> ./dashboard/index.html
-          echo "      if (report1 === report2) {" >> ./dashboard/index.html
-          echo "        alert('Please select two different reports to compare.');" >> ./dashboard/index.html
-          echo "        return;" >> ./dashboard/index.html
-          echo "      }" >> ./dashboard/index.html
-          echo "      " >> ./dashboard/index.html
-          echo "      // Create a simple comparison view by opening reports side by side" >> ./dashboard/index.html
-          echo "      const compareUrl = '../compare.html?report1=' + report1 + '&report2=' + report2;" >> ./dashboard/index.html
-          echo "      window.location.href = compareUrl;" >> ./dashboard/index.html
-          echo "    }" >> ./dashboard/index.html
-          echo "  </script>" >> ./dashboard/index.html
-          echo "</body>" >> ./dashboard/index.html
-          echo "</html>" >> ./dashboard/index.html
+          echo "  <script>" >> ./working-dir/deploy/dashboard/index.html
+          echo "    function compareReports() {" >> ./working-dir/deploy/dashboard/index.html
+          echo "      const report1 = document.getElementById('report1').value;" >> ./working-dir/deploy/dashboard/index.html
+          echo "      const report2 = document.getElementById('report2').value;" >> ./working-dir/deploy/dashboard/index.html
+          echo "      " >> ./working-dir/deploy/dashboard/index.html
+          echo "      if (report1 === report2) {" >> ./working-dir/deploy/dashboard/index.html
+          echo "        alert('Please select two different reports to compare.');" >> ./working-dir/deploy/dashboard/index.html
+          echo "        return;" >> ./working-dir/deploy/dashboard/index.html
+          echo "      }" >> ./working-dir/deploy/dashboard/index.html
+          echo "      " >> ./working-dir/deploy/dashboard/index.html
+          echo "      // Create a simple comparison view by opening reports side by side" >> ./working-dir/deploy/dashboard/index.html
+          echo "      const compareUrl = '../compare.html?report1=' + report1 + '&report2=' + report2;" >> ./working-dir/deploy/dashboard/index.html
+          echo "      window.location.href = compareUrl;" >> ./working-dir/deploy/dashboard/index.html
+          echo "    }" >> ./working-dir/deploy/dashboard/index.html
+          echo "  </script>" >> ./working-dir/deploy/dashboard/index.html
+          echo "</body>" >> ./working-dir/deploy/dashboard/index.html
+          echo "</html>" >> ./working-dir/deploy/dashboard/index.html
           
           # Create a simple comparison page using echo statements to avoid YAML parsing issues
-          echo '<!DOCTYPE html>' > ./compare.html
-          echo '<html lang="en">' >> ./compare.html
-          echo '<head>' >> ./compare.html
-          echo '  <meta charset="UTF-8">' >> ./compare.html
-          echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> ./compare.html
-          echo '  <title>JMeter Reports Comparison</title>' >> ./compare.html
-          echo '  <style>' >> ./compare.html
-          echo '    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }' >> ./compare.html
-          echo '    .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }' >> ./compare.html
-          echo '    .comparison-container { display: flex; height: calc(100vh - 60px); }' >> ./compare.html
-          echo '    .report-frame { flex: 1; border: none; height: 100%; }' >> ./compare.html
-          echo '    .separator { width: 4px; background-color: #ddd; cursor: col-resize; }' >> ./compare.html
-          echo '  </style>' >> ./compare.html
-          echo '</head>' >> ./compare.html
-          echo '<body>' >> ./compare.html
-          echo '  <div class="header">' >> ./compare.html
-          echo '    <h2>JMeter Reports Comparison</h2>' >> ./compare.html
-          echo '    <a href="./dashboard/index.html">← Back to Dashboard</a>' >> ./compare.html
-          echo '  </div>' >> ./compare.html
-          echo '  <div class="comparison-container" id="container">' >> ./compare.html
-          echo '    <iframe class="report-frame" id="report1Frame"></iframe>' >> ./compare.html
-          echo '    <div class="separator" id="separator"></div>' >> ./compare.html
-          echo '    <iframe class="report-frame" id="report2Frame"></iframe>' >> ./compare.html
-          echo '  </div>' >> ./compare.html
-          echo '  <script>' >> ./compare.html
-          echo '    // Get report names from URL' >> ./compare.html
-          echo '    const params = new URLSearchParams(window.location.search);' >> ./compare.html
-          echo '    const report1 = params.get("report1");' >> ./compare.html
-          echo '    const report2 = params.get("report2");' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    // Set iframe sources' >> ./compare.html
-          echo '    document.getElementById("report1Frame").src = "./historical-reports/" + report1 + "/index.html";' >> ./compare.html
-          echo '    document.getElementById("report2Frame").src = "./historical-reports/" + report2 + "/index.html";' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    // Update title' >> ./compare.html
-          echo '    document.title = "Compare: " + report1 + " vs " + report2;' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    // Set up resizable panels' >> ./compare.html
-          echo '    const separator = document.getElementById("separator");' >> ./compare.html
-          echo '    let isResizing = false;' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    separator.addEventListener("mousedown", function(e) {' >> ./compare.html
-          echo '      isResizing = true;' >> ./compare.html
-          echo '    });' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    document.addEventListener("mousemove", function(e) {' >> ./compare.html
-          echo '      if (!isResizing) return;' >> ./compare.html
-          echo '      ' >> ./compare.html
-          echo '      const container = document.getElementById("container");' >> ./compare.html
-          echo '      const containerRect = container.getBoundingClientRect();' >> ./compare.html
-          echo '      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;' >> ./compare.html
-          echo '      ' >> ./compare.html
-          echo '      // Limit the minimum width of each panel' >> ./compare.html
-          echo '      if (percentage > 10 && percentage < 90) {' >> ./compare.html
-          echo '        document.getElementById("report1Frame").style.width = percentage + "%";' >> ./compare.html
-          echo '        document.getElementById("report2Frame").style.width = (100 - percentage) + "%";' >> ./compare.html
-          echo '      }' >> ./compare.html
-          echo '    });' >> ./compare.html
-          echo '    ' >> ./compare.html
-          echo '    document.addEventListener("mouseup", function() {' >> ./compare.html
-          echo '      isResizing = false;' >> ./compare.html
-          echo '    });' >> ./compare.html
-          echo '  </script>' >> ./compare.html
-          echo '</body>' >> ./compare.html
-          echo '</html>' >> ./compare.html
+          echo '<!DOCTYPE html>' > ./working-dir/deploy/compare.html
+          echo '<html lang="en">' >> ./working-dir/deploy/compare.html
+          echo '<head>' >> ./working-dir/deploy/compare.html
+          echo '  <meta charset="UTF-8">' >> ./working-dir/deploy/compare.html
+          echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> ./working-dir/deploy/compare.html
+          echo '  <title>JMeter Reports Comparison</title>' >> ./working-dir/deploy/compare.html
+          echo '  <style>' >> ./working-dir/deploy/compare.html
+          echo '    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }' >> ./working-dir/deploy/compare.html
+          echo '    .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }' >> ./working-dir/deploy/compare.html
+          echo '    .comparison-container { display: flex; height: calc(100vh - 60px); }' >> ./working-dir/deploy/compare.html
+          echo '    .report-frame { flex: 1; border: none; height: 100%; }' >> ./working-dir/deploy/compare.html
+          echo '    .separator { width: 4px; background-color: #ddd; cursor: col-resize; }' >> ./working-dir/deploy/compare.html
+          echo '  </style>' >> ./working-dir/deploy/compare.html
+          echo '</head>' >> ./working-dir/deploy/compare.html
+          echo '<body>' >> ./working-dir/deploy/compare.html
+          echo '  <div class="header">' >> ./working-dir/deploy/compare.html
+          echo '    <h2>JMeter Reports Comparison</h2>' >> ./working-dir/deploy/compare.html
+          echo '    <a href="./dashboard/index.html">← Back to Dashboard</a>' >> ./working-dir/deploy/compare.html
+          echo '  </div>' >> ./working-dir/deploy/compare.html
+          echo '  <div class="comparison-container" id="container">' >> ./working-dir/deploy/compare.html
+          echo '    <iframe class="report-frame" id="report1Frame"></iframe>' >> ./working-dir/deploy/compare.html
+          echo '    <div class="separator" id="separator"></div>' >> ./working-dir/deploy/compare.html
+          echo '    <iframe class="report-frame" id="report2Frame"></iframe>' >> ./working-dir/deploy/compare.html
+          echo '  </div>' >> ./working-dir/deploy/compare.html
+          echo '  <script>' >> ./working-dir/deploy/compare.html
+          echo '    // Get report names from URL' >> ./working-dir/deploy/compare.html
+          echo '    const params = new URLSearchParams(window.location.search);' >> ./working-dir/deploy/compare.html
+          echo '    const report1 = params.get("report1");' >> ./working-dir/deploy/compare.html
+          echo '    const report2 = params.get("report2");' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    // Set iframe sources' >> ./working-dir/deploy/compare.html
+          echo '    document.getElementById("report1Frame").src = "./historical-reports/" + report1 + "/index.html";' >> ./working-dir/deploy/compare.html
+          echo '    document.getElementById("report2Frame").src = "./historical-reports/" + report2 + "/index.html";' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    // Update title' >> ./working-dir/deploy/compare.html
+          echo '    document.title = "Compare: " + report1 + " vs " + report2;' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    // Set up resizable panels' >> ./working-dir/deploy/compare.html
+          echo '    const separator = document.getElementById("separator");' >> ./working-dir/deploy/compare.html
+          echo '    let isResizing = false;' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    separator.addEventListener("mousedown", function(e) {' >> ./working-dir/deploy/compare.html
+          echo '      isResizing = true;' >> ./working-dir/deploy/compare.html
+          echo '    });' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    document.addEventListener("mousemove", function(e) {' >> ./working-dir/deploy/compare.html
+          echo '      if (!isResizing) return;' >> ./working-dir/deploy/compare.html
+          echo '      ' >> ./working-dir/deploy/compare.html
+          echo '      const container = document.getElementById("container");' >> ./working-dir/deploy/compare.html
+          echo '      const containerRect = container.getBoundingClientRect();' >> ./working-dir/deploy/compare.html
+          echo '      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;' >> ./working-dir/deploy/compare.html
+          echo '      ' >> ./working-dir/deploy/compare.html
+          echo '      // Limit the minimum width of each panel' >> ./working-dir/deploy/compare.html
+          echo '      if (percentage > 10 && percentage < 90) {' >> ./working-dir/deploy/compare.html
+          echo '        document.getElementById("report1Frame").style.width = percentage + "%";' >> ./working-dir/deploy/compare.html
+          echo '        document.getElementById("report2Frame").style.width = (100 - percentage) + "%";' >> ./working-dir/deploy/compare.html
+          echo '      }' >> ./working-dir/deploy/compare.html
+          echo '    });' >> ./working-dir/deploy/compare.html
+          echo '    ' >> ./working-dir/deploy/compare.html
+          echo '    document.addEventListener("mouseup", function() {' >> ./working-dir/deploy/compare.html
+          echo '      isResizing = false;' >> ./working-dir/deploy/compare.html
+          echo '    });' >> ./working-dir/deploy/compare.html
+          echo '  </script>' >> ./working-dir/deploy/compare.html
+          echo '</body>' >> ./working-dir/deploy/compare.html
+          echo '</html>' >> ./working-dir/deploy/compare.html
 
       # ✅ Checkout main repository for scripts
       - name: Checkout main repository
         uses: actions/checkout@v4
         with:
-          path: temp-checkout
+          path: ./working-dir/scripts-checkout
           ref: main
       
       # ✅ Setup Python for trend charts
@@ -372,44 +401,61 @@ jobs:
       - name: Generate trend charts
         run: |
           # Copy script to working directory
-          cp temp-checkout/scripts/generate_trend_chart.py ./
+          cp ./working-dir/scripts-checkout/scripts/generate_trend_chart.py ./working-dir/deploy/
           
           # Install required Python packages
           pip install matplotlib numpy pandas
           
           # Run the script to generate trend chart
-          python generate_trend_chart.py --history-dir ./history --output-dir ./dashboard --max-reports 10
+          cd ./working-dir/deploy && python generate_trend_chart.py --history-dir ./history --output-dir ./dashboard --max-reports 10
           
           # Clean up
-          rm -f generate_trend_chart.py
+          rm -f ./working-dir/deploy/generate_trend_chart.py
 
       # ✅ Prepare GitHub Pages Deployment
       - name: Prepare GitHub Pages Deployment
         run: |
           # Move current report to the main directory
-          cp -r ./current/* ./
+          cp -r ./working-dir/deploy/current/* ./working-dir/deploy/
+          
+          # Copy our index.html from the repo to the root of deployment folder
+          cp ./working-dir/scripts-checkout/index.html ./working-dir/deploy/ || echo "No custom index.html found, will use generated one"
+          
+          # Add .nojekyll file
+          touch ./working-dir/deploy/.nojekyll
+          
+          # Fix base URL in main index.html
+          sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/">#g' ./working-dir/deploy/index.html
           
           # Create a link to the history dashboard in the main page using echo statements
-          echo '' >> ./index.html
-          echo '<div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">' >> ./index.html
-          echo '  <h3>Performance Test History</h3>' >> ./index.html
-          echo '  <ul>' >> ./index.html
-          echo '    <li><a href="./dashboard/index.html">View Test History Dashboard</a></li>' >> ./index.html
-          echo '    <li><a href="./dashboard/trend_chart.html">View Performance Trends</a></li>' >> ./index.html
-          echo '    <li><a href="./historical-reports/latest/index.html">View Previous Test Run</a></li>' >> ./index.html
-          echo '  </ul>' >> ./index.html
-          echo '</div>' >> ./index.html
+          echo '' >> ./working-dir/deploy/index.html
+          echo '<div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">' >> ./working-dir/deploy/index.html
+          echo '  <h3>Performance Test History</h3>' >> ./working-dir/deploy/index.html
+          echo '  <ul>' >> ./working-dir/deploy/index.html
+          echo '    <li><a href="/chaabi-jmeter-tests/dashboard/index.html">View Test History Dashboard</a></li>' >> ./working-dir/deploy/index.html
+          echo '    <li><a href="/chaabi-jmeter-tests/dashboard/trend_chart.html">View Performance Trends</a></li>' >> ./working-dir/deploy/index.html
+          echo '    <li><a href="/chaabi-jmeter-tests/historical-reports/index.html">View Previous Test Run</a></li>' >> ./working-dir/deploy/index.html
+          echo '  </ul>' >> ./working-dir/deploy/index.html
+          echo '</div>' >> ./working-dir/deploy/index.html
           
           # Clean up temp checkout
-          rm -rf temp-checkout
+          rm -rf ./working-dir/scripts-checkout
+
+      # ✅ Fix all HTML files to ensure proper base URLs
+      - name: Fix base URLs in all HTML files
+        run: |
+          # Find all index.html files and add the base URL if not already present
+          find ./working-dir/deploy/ -name "index.html" -type f -exec grep -l "<base href=" {} \; -o -exec sed -i 's#<head>#<head><base href="/chaabi-jmeter-tests/">#g' {} \;
+          
+          echo "Fixed base URLs in HTML files for proper navigation"
+
+      # ✅ Upload artifact for GitHub Pages
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./working-dir/deploy
 
       # ✅ Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages                # Target branch for GitHub Pages
-          folder: ./                      # Folder containing the HTML reports with history
-          token: ${{ secrets.GITHUB_TOKEN }}
-          clean: false                    # Don't clean to preserve history
-          force: true
-          attempt-limit: 3
+        id: deployment
+        uses: actions/deploy-pages@v4
