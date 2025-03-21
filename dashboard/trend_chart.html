@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JMeter Performance Trends</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .chart-container { width: 90%; height: 400px; margin: 20px auto; }
+  </style>
+</head>
+<body>
+  <h1>JMeter Performance Trends</h1>
+  <p>Showing trends from the last 0 test runs</p>
+  
+  <div class="chart-container">
+    <canvas id="trendChart"></canvas>
+  </div>
+  
+  <script>
+    // Load chart data
+    const chartData = {"labels": [], "datasets": [{"label": "Avg Response Time (ms)", "data": [], "borderColor": "rgb(255, 99, 132)", "backgroundColor": "rgba(255, 99, 132, 0.5)", "yAxisID": "y-axis-1"}, {"label": "Throughput (req/s)", "data": [], "borderColor": "rgb(54, 162, 235)", "backgroundColor": "rgba(54, 162, 235, 0.5)", "yAxisID": "y-axis-2"}, {"label": "Error Rate (%)", "data": [], "borderColor": "rgb(255, 159, 64)", "backgroundColor": "rgba(255, 159, 64, 0.5)", "yAxisID": "y-axis-1"}]};
+    
+    // Create chart
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Test Run Date/Time'
+            }
+          },
+          'y-axis-1': {
+            type: 'linear',
+            position: 'left',
+            title: {
+              display: true,
+              text: 'Response Time (ms) / Error Rate (%)'
+            }
+          },
+          'y-axis-2': {
+            type: 'linear',
+            position: 'right',
+            title: {
+              display: true,
+              text: 'Throughput (req/s)'
+            },
+            grid: {
+              drawOnChartArea: false
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

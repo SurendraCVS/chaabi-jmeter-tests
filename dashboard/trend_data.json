@@ -1,0 +1,26 @@
+{
+  "labels": [],
+  "datasets": [
+    {
+      "label": "Avg Response Time (ms)",
+      "data": [],
+      "borderColor": "rgb(255, 99, 132)",
+      "backgroundColor": "rgba(255, 99, 132, 0.5)",
+      "yAxisID": "y-axis-1"
+    },
+    {
+      "label": "Throughput (req/s)",
+      "data": [],
+      "borderColor": "rgb(54, 162, 235)",
+      "backgroundColor": "rgba(54, 162, 235, 0.5)",
+      "yAxisID": "y-axis-2"
+    },
+    {
+      "label": "Error Rate (%)",
+      "data": [],
+      "borderColor": "rgb(255, 159, 64)",
+      "backgroundColor": "rgba(255, 159, 64, 0.5)",
+      "yAxisID": "y-axis-1"
+    }
+  ]
+}

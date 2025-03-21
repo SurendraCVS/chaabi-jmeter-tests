@@ -1,0 +1,11 @@
+{
+  "tests": [
+    {
+      "timestamp": "2025-03-21_09-29-19",
+      "test": "JMeterTest",
+      "success_rate": 95.121951,
+      "avg_response_time": 241.0,
+      "report_path": "reports/2025-03-21_09-29-19"
+    }
+  ]
+}
