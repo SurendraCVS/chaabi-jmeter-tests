@@ -156,19 +156,19 @@ jobs:
             tar -xzf "$LATEST_ARCHIVE" -C ./historical-reports/
             
             # Create a redirect for easier access
-            cat > ./historical-reports/index.html << EOF
-<!DOCTYPE html>
+            # Use YAML-safe approach for multiline strings with variable expansion
+            REDIRECT_CONTENT="<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="refresh" content="0; url=./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">
+  <meta http-equiv=\"refresh\" content=\"0; url=./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html\">
   <title>Redirecting to Latest Report</title>
 </head>
 <body>
   <p>Redirecting to the latest historical report...</p>
-  <p>If you are not redirected automatically, <a href="./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">click here</a>.</p>
+  <p>If you are not redirected automatically, <a href=\"./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html\">click here</a>.</p>
 </body>
-</html>
-EOF
+</html>"
+            echo "$REDIRECT_CONTENT" > ./historical-reports/index.html
           fi
 
       # ✅ Process and organize the history reports
@@ -286,73 +286,73 @@ EOF
           echo "</html>" >> ./dashboard/index.html
           
           # Create a simple comparison page
-          cat > ./compare.html << 'EOL'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>JMeter Reports Comparison</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-              .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }
-              .comparison-container { display: flex; height: calc(100vh - 60px); }
-              .report-frame { flex: 1; border: none; height: 100%; }
-              .separator { width: 4px; background-color: #ddd; cursor: col-resize; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h2>JMeter Reports Comparison</h2>
-              <a href="./dashboard/index.html">← Back to Dashboard</a>
-            </div>
-            <div class="comparison-container" id="container">
-              <iframe class="report-frame" id="report1Frame"></iframe>
-              <div class="separator" id="separator"></div>
-              <iframe class="report-frame" id="report2Frame"></iframe>
-            </div>
-            <script>
-              // Get report names from URL
-              const params = new URLSearchParams(window.location.search);
-              const report1 = params.get('report1');
-              const report2 = params.get('report2');
-              
-              // Set iframe sources
-              document.getElementById('report1Frame').src = './historical-reports/' + report1 + '/index.html';
-              document.getElementById('report2Frame').src = './historical-reports/' + report2 + '/index.html';
-              
-              // Update title
-              document.title = 'Compare: ' + report1 + ' vs ' + report2;
-              
-              // Set up resizable panels
-              const separator = document.getElementById('separator');
-              let isResizing = false;
-              
-              separator.addEventListener('mousedown', function(e) {
-                isResizing = true;
-              });
-              
-              document.addEventListener('mousemove', function(e) {
-                if (!isResizing) return;
-                
-                const container = document.getElementById('container');
-                const containerRect = container.getBoundingClientRect();
-                const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-                
-                // Limit the minimum width of each panel
-                if (percentage > 10 && percentage < 90) {
-                  document.getElementById('report1Frame').style.width = percentage + '%';
-                  document.getElementById('report2Frame').style.width = (100 - percentage) + '%';
-                }
-              });
-              
-              document.addEventListener('mouseup', function() {
-                isResizing = false;
-              });
-            </script>
-          </body>
-          </html>
-EOL
+          # Use YAML-safe approach for multiline HTML content
+          COMPARISON_PAGE="<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"UTF-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+  <title>JMeter Reports Comparison</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }
+    .comparison-container { display: flex; height: calc(100vh - 60px); }
+    .report-frame { flex: 1; border: none; height: 100%; }
+    .separator { width: 4px; background-color: #ddd; cursor: col-resize; }
+  </style>
+</head>
+<body>
+  <div class=\"header\">
+    <h2>JMeter Reports Comparison</h2>
+    <a href=\"./dashboard/index.html\">← Back to Dashboard</a>
+  </div>
+  <div class=\"comparison-container\" id=\"container\">
+    <iframe class=\"report-frame\" id=\"report1Frame\"></iframe>
+    <div class=\"separator\" id=\"separator\"></div>
+    <iframe class=\"report-frame\" id=\"report2Frame\"></iframe>
+  </div>
+  <script>
+    // Get report names from URL
+    const params = new URLSearchParams(window.location.search);
+    const report1 = params.get('report1');
+    const report2 = params.get('report2');
+    
+    // Set iframe sources
+    document.getElementById('report1Frame').src = './historical-reports/' + report1 + '/index.html';
+    document.getElementById('report2Frame').src = './historical-reports/' + report2 + '/index.html';
+    
+    // Update title
+    document.title = 'Compare: ' + report1 + ' vs ' + report2;
+    
+    // Set up resizable panels
+    const separator = document.getElementById('separator');
+    let isResizing = false;
+    
+    separator.addEventListener('mousedown', function(e) {
+      isResizing = true;
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+      
+      const container = document.getElementById('container');
+      const containerRect = container.getBoundingClientRect();
+      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      // Limit the minimum width of each panel
+      if (percentage > 10 && percentage < 90) {
+        document.getElementById('report1Frame').style.width = percentage + '%';
+        document.getElementById('report2Frame').style.width = (100 - percentage) + '%';
+      }
+    });
+    
+    document.addEventListener('mouseup', function() {
+      isResizing = false;
+    });
+  </script>
+</body>
+</html>"
+          echo "$COMPARISON_PAGE" > ./compare.html
 
       # ✅ Checkout main repository for scripts
       - name: Checkout main repository
@@ -389,17 +389,17 @@ EOL
           cp -r ./current/* ./
           
           # Create a link to the history dashboard in the main page
-          cat >> ./index.html << 'EOF'
-          
-          <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-            <h3>Performance Test History</h3>
-            <ul>
-              <li><a href="./dashboard/index.html">View Test History Dashboard</a></li>
-              <li><a href="./dashboard/trend_chart.html">View Performance Trends</a></li>
-              <li><a href="./historical-reports/latest/index.html">View Previous Test Run</a></li>
-            </ul>
-          </div>
-EOF
+          # Use YAML-safe approach for multiline HTML content
+          DASHBOARD_LINK="
+<div style=\"margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;\">
+  <h3>Performance Test History</h3>
+  <ul>
+    <li><a href=\"./dashboard/index.html\">View Test History Dashboard</a></li>
+    <li><a href=\"./dashboard/trend_chart.html\">View Performance Trends</a></li>
+    <li><a href=\"./historical-reports/latest/index.html\">View Previous Test Run</a></li>
+  </ul>
+</div>"
+          echo "$DASHBOARD_LINK" >> ./index.html
           
           # Clean up temp checkout
           rm -rf temp-checkout
