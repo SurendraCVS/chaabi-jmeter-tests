@@ -174,9 +174,10 @@ jobs:
       - name: Update history file
         run: |
           if [ -f "./scripts/update_history.sh" ]; then
+            chmod +x ./scripts/update_history.sh
             ./scripts/update_history.sh
           else
-            echo "Warning: update_history.sh script not found"
+            echo "Warning: update_history.sh script not found, using built-in history update"
             
             # Create sample history entry
             TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
@@ -184,26 +185,53 @@ jobs:
             
             # Extract success rate and response time from statistics file
             echo "Extracting metrics from statistics file at ./reports/$TIMESTAMP/JMeterTest/statistics.json"
-            cat ./reports/$TIMESTAMP/JMeterTest/statistics.json
             
-            ERROR_PCT=$(jq -r '.Total.errorPct' ./reports/$TIMESTAMP/JMeterTest/statistics.json)
-            SUCCESS_RATE=$(echo "100 - $ERROR_PCT" | bc)
-            AVG_RESPONSE_TIME=$(jq -r '.Total.meanResTime' ./reports/$TIMESTAMP/JMeterTest/statistics.json)
-            
-            echo "Extracted metrics: Success Rate=$SUCCESS_RATE%, Avg Response Time=$AVG_RESPONSE_TIME ms"
-            
-            # Add to history file using temp file approach
-            jq --arg timestamp "$TIMESTAMP" \
-               --arg test "JMeterTest" \
-               --argjson success_rate "$SUCCESS_RATE" \
-               --argjson avg_response "$AVG_RESPONSE_TIME" \
-               --arg report_path "reports/$TIMESTAMP" \
-               '.tests += [{"timestamp": $timestamp, "test": $test, "success_rate": $success_rate, "avg_response_time": $avg_response, "report_path": $report_path}]' \
-               "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
-               
-            # Display updated history file
-            echo "Updated history file:"
-            cat "$HISTORY_FILE" | jq '.'
+            if [ -f "./reports/$TIMESTAMP/JMeterTest/statistics.json" ]; then
+              cat ./reports/$TIMESTAMP/JMeterTest/statistics.json
+              
+              ERROR_PCT=$(jq -r '.Total.errorPct' ./reports/$TIMESTAMP/JMeterTest/statistics.json)
+              SUCCESS_RATE=$(echo "100 - $ERROR_PCT" | bc)
+              AVG_RESPONSE_TIME=$(jq -r '.Total.meanResTime' ./reports/$TIMESTAMP/JMeterTest/statistics.json)
+              
+              echo "Extracted metrics: Success Rate=$SUCCESS_RATE%, Avg Response Time=$AVG_RESPONSE_TIME ms"
+              
+              # Validate response time (avoid unrealistic values)
+              if [ $(echo "$AVG_RESPONSE_TIME < 1000000" | bc -l) -eq 1 ]; then
+                # Check if this timestamp already exists in the history file
+                if [ -f "$HISTORY_FILE" ]; then
+                  TIMESTAMP_EXISTS=$(jq --arg ts "$TIMESTAMP" '.tests | map(select(.timestamp == $ts)) | length' "$HISTORY_FILE")
+                else
+                  TIMESTAMP_EXISTS=0
+                  echo '{"tests":[]}' > "$HISTORY_FILE"
+                fi
+                
+                if [ "$TIMESTAMP_EXISTS" -eq "0" ]; then
+                  # Add to history file using temp file approach
+                  jq --arg timestamp "$TIMESTAMP" \
+                     --arg test "JMeterTest" \
+                     --argjson success_rate "$SUCCESS_RATE" \
+                     --argjson avg_response "$AVG_RESPONSE_TIME" \
+                     --arg report_path "reports/$TIMESTAMP" \
+                     '.tests += [{"timestamp": $timestamp, "test": $test, "success_rate": $success_rate, "avg_response_time": $avg_response, "report_path": $report_path}]' \
+                     "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+                  
+                  # Sort tests by timestamp (newest first)
+                  jq '.tests = (.tests | sort_by(.timestamp) | reverse)' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+                     
+                  echo "Added test results to history file"
+                else
+                  echo "Timestamp $TIMESTAMP already exists in history file. Skipping."
+                fi
+              else
+                echo "Warning: Unrealistic response time ($AVG_RESPONSE_TIME ms) detected. Skipping history update."
+              fi
+              
+              # Display updated history file
+              echo "Updated history file:"
+              cat "$HISTORY_FILE" | jq '.'
+            else
+              echo "Warning: Statistics file not found at ./reports/$TIMESTAMP/JMeterTest/statistics.json"
+            fi
           fi
 
       # ✅ Copy history files to key locations

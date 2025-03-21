@@ -71,18 +71,23 @@ else
             SUCCESS_RATE=$(awk "BEGIN {print 100 - $ERROR_PCT}")
             AVG_RESPONSE_TIME=$(jq '.Total.meanResTime' "$STATS_FILE" 2>/dev/null)
             
-            # Add to history if we have valid data
+            # Validate metrics to ensure they're realistic values
             if [ ! -z "$SUCCESS_RATE" ] && [ ! -z "$AVG_RESPONSE_TIME" ]; then
-              # Add new test result to history
-              jq --arg timestamp "$TIMESTAMP" \
-                 --arg test "$TEST_NAME" \
-                 --argjson success_rate "$SUCCESS_RATE" \
-                 --argjson avg_response "$AVG_RESPONSE_TIME" \
-                 --arg report_path "$REPORT_DIR" \
-                 '.tests += [{"timestamp": $timestamp, "test": $test, "success_rate": $success_rate, "avg_response_time": $avg_response, "report_path": $report_path}]' \
-                 "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
-              
-              echo "Added $TEST_NAME results to history.json"
+              # Ensure response time is a realistic value (less than 1 million ms)
+              if (( $(echo "$AVG_RESPONSE_TIME < 1000000" | bc -l) )); then
+                # Add new test result to history
+                jq --arg timestamp "$TIMESTAMP" \
+                   --arg test "$TEST_NAME" \
+                   --argjson success_rate "$SUCCESS_RATE" \
+                   --argjson avg_response "$AVG_RESPONSE_TIME" \
+                   --arg report_path "$REPORT_DIR" \
+                   '.tests += [{"timestamp": $timestamp, "test": $test, "success_rate": $success_rate, "avg_response_time": $avg_response, "report_path": $report_path}]' \
+                   "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+                
+                echo "Added $TEST_NAME results to history.json with Success Rate: $SUCCESS_RATE%, Avg Response Time: $AVG_RESPONSE_TIME ms"
+              else
+                echo "Warning: Unrealistic response time ($AVG_RESPONSE_TIME ms) detected for $TEST_NAME. Skipping."
+              fi
             else
               echo "Warning: Could not extract success rate or response time for $TEST_NAME"
             fi
