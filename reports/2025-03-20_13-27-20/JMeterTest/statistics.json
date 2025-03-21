@@ -1,9 +1,0 @@
-{
-  "Total": {
-    "transaction": "Total",
-    "sampleCount": 44,
-    "errorCount": 1,
-    "errorPct": 2.27273,
-    "meanResTime": 1.70288e+12
-  }
-}
