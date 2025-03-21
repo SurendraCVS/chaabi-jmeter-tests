@@ -211,8 +211,8 @@ def generate_trend_charts(history_dir, output_dir, max_reports=10):
   <title>JMeter Performance Trends</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .chart-container { width: 90%; height: 400px; margin: 20px auto; }
+    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+    .chart-container {{ width: 90%; height: 400px; margin: 20px auto; }}
   </style>
 </head>
 <body>
@@ -258,7 +258,7 @@ def generate_trend_charts(history_dir, output_dir, max_reports=10):
               text: 'Throughput (req/s)'
             }},
             grid: {{
-              drawOnChartArea: false,
+              drawOnChartArea: false
             }}
           }}
         }},
