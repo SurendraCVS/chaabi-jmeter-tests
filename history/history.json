@@ -1,46 +1,11 @@
 {
   "tests": [
     {
-      "timestamp": "2025-03-21_06-18-21",
+      "timestamp": "2025-03-21_09-29-19",
       "test": "JMeterTest",
-      "success_rate": 95.122,
-      "avg_response_time": 228.0,
-      "report_path": "reports/2025-03-21_06-18-21"
-    },
-    {
-      "timestamp": "2025-03-21_05-52-18",
-      "test": "JMeterTest",
-      "success_rate": 95.122,
-      "avg_response_time": 253.65853658536588,
-      "report_path": "reports/2025-03-21_05-52-18"
-    },
-    {
-      "timestamp": "2025-03-21_05-29-08",
-      "test": "JMeterTest",
-      "success_rate": 97.5,
-      "avg_response_time": 752.3000000000002,
-      "report_path": "reports/2025-03-21_05-29-08"
-    },
-    {
-      "timestamp": "2025-03-20_18-50-40",
-      "test": "JMeterTest",
-      "success_rate": 97.7273,
-      "avg_response_time": 958.409,
-      "report_path": "reports/2025-03-20_18-50-40"
-    },
-    {
-      "timestamp": "2025-03-20_13-27-20",
-      "test": "JMeterTest",
-      "success_rate": 97.7273,
-      "avg_response_time": 1.70288E+12,
-      "report_path": "reports/2025-03-20_13-27-20"
-    },
-    {
-      "timestamp": "2023-11-08_16-20-00",
-      "test": "LoginTest",
-      "success_rate": 99.4,
-      "avg_response_time": 280.45,
-      "report_path": "reports/2023-11-08_16-20-00"
+      "success_rate": 95.121951,
+      "avg_response_time": 241.0,
+      "report_path": "reports/2025-03-21_09-29-19"
     }
   ]
 }
