@@ -156,19 +156,23 @@ jobs:
             tar -xzf "$LATEST_ARCHIVE" -C ./historical-reports/
             
             # Create a redirect for easier access
-            # Use YAML-safe approach for multiline strings with variable expansion
-            REDIRECT_CONTENT="<!DOCTYPE html>
+            # Extract the base name first to avoid nested quoting issues
+            BASENAME=$(basename "$LATEST_ARCHIVE" .tar.gz)
+            
+            # Use YAML-safe approach with pre-calculated basename
+            cat > ./historical-reports/index.html << EOF
+<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv=\"refresh\" content=\"0; url=./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html\">
+  <meta http-equiv="refresh" content="0; url=./${BASENAME}/index.html">
   <title>Redirecting to Latest Report</title>
 </head>
 <body>
   <p>Redirecting to the latest historical report...</p>
-  <p>If you are not redirected automatically, <a href=\"./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html\">click here</a>.</p>
+  <p>If you are not redirected automatically, <a href="./${BASENAME}/index.html">click here</a>.</p>
 </body>
-</html>"
-            echo "$REDIRECT_CONTENT" > ./historical-reports/index.html
+</html>
+EOF
           fi
 
       # ✅ Process and organize the history reports
