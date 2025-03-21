@@ -159,20 +159,19 @@ jobs:
             # Extract the base name first to avoid nested quoting issues
             BASENAME=$(basename "$LATEST_ARCHIVE" .tar.gz)
             
-            # Use YAML-safe approach with pre-calculated basename
-            cat > ./historical-reports/index.html << EOF
-<!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="refresh" content="0; url=./${BASENAME}/index.html">
-  <title>Redirecting to Latest Report</title>
-</head>
-<body>
-  <p>Redirecting to the latest historical report...</p>
-  <p>If you are not redirected automatically, <a href="./${BASENAME}/index.html">click here</a>.</p>
-</body>
-</html>
-EOF
+            # Create the HTML file with proper YAML indentation
+            # Using echo statements instead of heredoc to avoid YAML parsing issues
+            echo '<!DOCTYPE html>' > ./historical-reports/index.html
+            echo '<html>' >> ./historical-reports/index.html
+            echo '<head>' >> ./historical-reports/index.html
+            echo "  <meta http-equiv=\"refresh\" content=\"0; url=./${BASENAME}/index.html\">" >> ./historical-reports/index.html
+            echo '  <title>Redirecting to Latest Report</title>' >> ./historical-reports/index.html
+            echo '</head>' >> ./historical-reports/index.html
+            echo '<body>' >> ./historical-reports/index.html
+            echo '  <p>Redirecting to the latest historical report...</p>' >> ./historical-reports/index.html
+            echo "  <p>If you are not redirected automatically, <a href=\"./${BASENAME}/index.html\">click here</a>.</p>" >> ./historical-reports/index.html
+            echo '</body>' >> ./historical-reports/index.html
+            echo '</html>' >> ./historical-reports/index.html
           fi
 
       # ✅ Process and organize the history reports
