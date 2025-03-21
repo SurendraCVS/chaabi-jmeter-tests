@@ -157,18 +157,18 @@ jobs:
             
             # Create a redirect for easier access
             cat > ./historical-reports/index.html << EOF
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta http-equiv="refresh" content="0; url=./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">
-              <title>Redirecting to Latest Report</title>
-            </head>
-            <body>
-              <p>Redirecting to the latest historical report...</p>
-              <p>If you are not redirected automatically, <a href="./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">click here</a>.</p>
-            </body>
-            </html>
-            EOF
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0; url=./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">
+  <title>Redirecting to Latest Report</title>
+</head>
+<body>
+  <p>Redirecting to the latest historical report...</p>
+  <p>If you are not redirected automatically, <a href="./$(basename "$LATEST_ARCHIVE" .tar.gz)/index.html">click here</a>.</p>
+</body>
+</html>
+EOF
           fi
 
       # ✅ Process and organize the history reports
@@ -286,7 +286,7 @@ jobs:
           echo "</html>" >> ./dashboard/index.html
           
           # Create a simple comparison page
-          cat > ./compare.html << EOL
+          cat > ./compare.html << 'EOL'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -352,7 +352,7 @@ jobs:
             </script>
           </body>
           </html>
-          EOL
+EOL
 
       # ✅ Checkout main repository for scripts
       - name: Checkout main repository
@@ -389,7 +389,7 @@ jobs:
           cp -r ./current/* ./
           
           # Create a link to the history dashboard in the main page
-          cat >> ./index.html << EOF
+          cat >> ./index.html << 'EOF'
           
           <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
             <h3>Performance Test History</h3>
@@ -399,7 +399,7 @@ jobs:
               <li><a href="./historical-reports/latest/index.html">View Previous Test Run</a></li>
             </ul>
           </div>
-          EOF
+EOF
           
           # Clean up temp checkout
           rm -rf temp-checkout
