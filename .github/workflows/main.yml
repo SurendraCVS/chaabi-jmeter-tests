@@ -288,74 +288,72 @@ jobs:
           echo "</body>" >> ./dashboard/index.html
           echo "</html>" >> ./dashboard/index.html
           
-          # Create a simple comparison page
-          # Use YAML-safe approach for multiline HTML content
-          COMPARISON_PAGE="<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-  <title>JMeter Reports Comparison</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }
-    .comparison-container { display: flex; height: calc(100vh - 60px); }
-    .report-frame { flex: 1; border: none; height: 100%; }
-    .separator { width: 4px; background-color: #ddd; cursor: col-resize; }
-  </style>
-</head>
-<body>
-  <div class=\"header\">
-    <h2>JMeter Reports Comparison</h2>
-    <a href=\"./dashboard/index.html\">← Back to Dashboard</a>
-  </div>
-  <div class=\"comparison-container\" id=\"container\">
-    <iframe class=\"report-frame\" id=\"report1Frame\"></iframe>
-    <div class=\"separator\" id=\"separator\"></div>
-    <iframe class=\"report-frame\" id=\"report2Frame\"></iframe>
-  </div>
-  <script>
-    // Get report names from URL
-    const params = new URLSearchParams(window.location.search);
-    const report1 = params.get('report1');
-    const report2 = params.get('report2');
-    
-    // Set iframe sources
-    document.getElementById('report1Frame').src = './historical-reports/' + report1 + '/index.html';
-    document.getElementById('report2Frame').src = './historical-reports/' + report2 + '/index.html';
-    
-    // Update title
-    document.title = 'Compare: ' + report1 + ' vs ' + report2;
-    
-    // Set up resizable panels
-    const separator = document.getElementById('separator');
-    let isResizing = false;
-    
-    separator.addEventListener('mousedown', function(e) {
-      isResizing = true;
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-      if (!isResizing) return;
-      
-      const container = document.getElementById('container');
-      const containerRect = container.getBoundingClientRect();
-      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-      
-      // Limit the minimum width of each panel
-      if (percentage > 10 && percentage < 90) {
-        document.getElementById('report1Frame').style.width = percentage + '%';
-        document.getElementById('report2Frame').style.width = (100 - percentage) + '%';
-      }
-    });
-    
-    document.addEventListener('mouseup', function() {
-      isResizing = false;
-    });
-  </script>
-</body>
-</html>"
-          echo "$COMPARISON_PAGE" > ./compare.html
+          # Create a simple comparison page using echo statements to avoid YAML parsing issues
+          echo '<!DOCTYPE html>' > ./compare.html
+          echo '<html lang="en">' >> ./compare.html
+          echo '<head>' >> ./compare.html
+          echo '  <meta charset="UTF-8">' >> ./compare.html
+          echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> ./compare.html
+          echo '  <title>JMeter Reports Comparison</title>' >> ./compare.html
+          echo '  <style>' >> ./compare.html
+          echo '    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }' >> ./compare.html
+          echo '    .header { padding: 10px 20px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }' >> ./compare.html
+          echo '    .comparison-container { display: flex; height: calc(100vh - 60px); }' >> ./compare.html
+          echo '    .report-frame { flex: 1; border: none; height: 100%; }' >> ./compare.html
+          echo '    .separator { width: 4px; background-color: #ddd; cursor: col-resize; }' >> ./compare.html
+          echo '  </style>' >> ./compare.html
+          echo '</head>' >> ./compare.html
+          echo '<body>' >> ./compare.html
+          echo '  <div class="header">' >> ./compare.html
+          echo '    <h2>JMeter Reports Comparison</h2>' >> ./compare.html
+          echo '    <a href="./dashboard/index.html">← Back to Dashboard</a>' >> ./compare.html
+          echo '  </div>' >> ./compare.html
+          echo '  <div class="comparison-container" id="container">' >> ./compare.html
+          echo '    <iframe class="report-frame" id="report1Frame"></iframe>' >> ./compare.html
+          echo '    <div class="separator" id="separator"></div>' >> ./compare.html
+          echo '    <iframe class="report-frame" id="report2Frame"></iframe>' >> ./compare.html
+          echo '  </div>' >> ./compare.html
+          echo '  <script>' >> ./compare.html
+          echo '    // Get report names from URL' >> ./compare.html
+          echo '    const params = new URLSearchParams(window.location.search);' >> ./compare.html
+          echo '    const report1 = params.get("report1");' >> ./compare.html
+          echo '    const report2 = params.get("report2");' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    // Set iframe sources' >> ./compare.html
+          echo '    document.getElementById("report1Frame").src = "./historical-reports/" + report1 + "/index.html";' >> ./compare.html
+          echo '    document.getElementById("report2Frame").src = "./historical-reports/" + report2 + "/index.html";' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    // Update title' >> ./compare.html
+          echo '    document.title = "Compare: " + report1 + " vs " + report2;' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    // Set up resizable panels' >> ./compare.html
+          echo '    const separator = document.getElementById("separator");' >> ./compare.html
+          echo '    let isResizing = false;' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    separator.addEventListener("mousedown", function(e) {' >> ./compare.html
+          echo '      isResizing = true;' >> ./compare.html
+          echo '    });' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    document.addEventListener("mousemove", function(e) {' >> ./compare.html
+          echo '      if (!isResizing) return;' >> ./compare.html
+          echo '      ' >> ./compare.html
+          echo '      const container = document.getElementById("container");' >> ./compare.html
+          echo '      const containerRect = container.getBoundingClientRect();' >> ./compare.html
+          echo '      const percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;' >> ./compare.html
+          echo '      ' >> ./compare.html
+          echo '      // Limit the minimum width of each panel' >> ./compare.html
+          echo '      if (percentage > 10 && percentage < 90) {' >> ./compare.html
+          echo '        document.getElementById("report1Frame").style.width = percentage + "%";' >> ./compare.html
+          echo '        document.getElementById("report2Frame").style.width = (100 - percentage) + "%";' >> ./compare.html
+          echo '      }' >> ./compare.html
+          echo '    });' >> ./compare.html
+          echo '    ' >> ./compare.html
+          echo '    document.addEventListener("mouseup", function() {' >> ./compare.html
+          echo '      isResizing = false;' >> ./compare.html
+          echo '    });' >> ./compare.html
+          echo '  </script>' >> ./compare.html
+          echo '</body>' >> ./compare.html
+          echo '</html>' >> ./compare.html
 
       # ✅ Checkout main repository for scripts
       - name: Checkout main repository
@@ -391,18 +389,16 @@ jobs:
           # Move current report to the main directory
           cp -r ./current/* ./
           
-          # Create a link to the history dashboard in the main page
-          # Use YAML-safe approach for multiline HTML content
-          DASHBOARD_LINK="
-<div style=\"margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;\">
-  <h3>Performance Test History</h3>
-  <ul>
-    <li><a href=\"./dashboard/index.html\">View Test History Dashboard</a></li>
-    <li><a href=\"./dashboard/trend_chart.html\">View Performance Trends</a></li>
-    <li><a href=\"./historical-reports/latest/index.html\">View Previous Test Run</a></li>
-  </ul>
-</div>"
-          echo "$DASHBOARD_LINK" >> ./index.html
+          # Create a link to the history dashboard in the main page using echo statements
+          echo '' >> ./index.html
+          echo '<div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">' >> ./index.html
+          echo '  <h3>Performance Test History</h3>' >> ./index.html
+          echo '  <ul>' >> ./index.html
+          echo '    <li><a href="./dashboard/index.html">View Test History Dashboard</a></li>' >> ./index.html
+          echo '    <li><a href="./dashboard/trend_chart.html">View Performance Trends</a></li>' >> ./index.html
+          echo '    <li><a href="./historical-reports/latest/index.html">View Previous Test Run</a></li>' >> ./index.html
+          echo '  </ul>' >> ./index.html
+          echo '</div>' >> ./index.html
           
           # Clean up temp checkout
           rm -rf temp-checkout
