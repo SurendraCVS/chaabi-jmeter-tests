@@ -25,6 +25,14 @@ if [ ! -f "$HISTORY_FILE" ]; then
   echo '{"tests": []}' > "$HISTORY_FILE"
 fi
 
+# Clean any unrealistic values from existing history
+if [ -f "$HISTORY_FILE" ]; then
+  echo "Cleaning unrealistic values from existing history..."
+  # Filter out entries with response time greater than 100,000 ms (100 seconds) which are likely errors
+  jq '.tests = [.tests[] | select(.avg_response_time < 100000)]' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+  echo "History cleaned."
+fi
+
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
   echo "Warning: jq is not installed. Using basic file operations instead."
@@ -73,8 +81,8 @@ else
             
             # Validate metrics to ensure they're realistic values
             if [ ! -z "$SUCCESS_RATE" ] && [ ! -z "$AVG_RESPONSE_TIME" ]; then
-              # Ensure response time is a realistic value (less than 1 million ms)
-              if (( $(echo "$AVG_RESPONSE_TIME < 1000000" | bc -l) )); then
+              # Ensure response time is a realistic value (less than 100 seconds)
+              if (( $(echo "$AVG_RESPONSE_TIME < 100000" | bc -l) )); then
                 # Add new test result to history
                 jq --arg timestamp "$TIMESTAMP" \
                    --arg test "$TEST_NAME" \

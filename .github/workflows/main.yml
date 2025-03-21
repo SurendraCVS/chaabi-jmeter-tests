@@ -195,8 +195,8 @@ jobs:
               
               echo "Extracted metrics: Success Rate=$SUCCESS_RATE%, Avg Response Time=$AVG_RESPONSE_TIME ms"
               
-              # Validate response time (avoid unrealistic values)
-              if [ $(echo "$AVG_RESPONSE_TIME < 1000000" | bc -l) -eq 1 ]; then
+              # Validate response time (avoid unrealistic values) - use 100,000 ms (100 seconds) as threshold
+              if [ $(echo "$AVG_RESPONSE_TIME < 100000" | bc -l) -eq 1 ]; then
                 # Check if this timestamp already exists in the history file
                 if [ -f "$HISTORY_FILE" ]; then
                   TIMESTAMP_EXISTS=$(jq --arg ts "$TIMESTAMP" '.tests | map(select(.timestamp == $ts)) | length' "$HISTORY_FILE")
