@@ -24,7 +24,7 @@ async function init() {
             allTests = historyData.tests;
             populateSelectors();
             setupEventListeners();
-        } else {
+                } else {
             showError("No test data found. Please run some JMeter tests first.");
         }
     } catch (error) {
